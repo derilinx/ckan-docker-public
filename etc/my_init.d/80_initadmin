@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# this will fail if you didn't kill the db too... how best to fix that...
+set +e
+set -u
+
+: ${ADMIN_PASSWORD:=}
+: ${ADMIN_EMAIL:=}
+
+"$CKAN_HOME"/bin/paster --plugin=ckan user add admin password="$ADMIN_PASSWORD" email="$ADMIN_EMAIL" --config=/etc/ckan/default/ckan.ini
+"$CKAN_HOME"/bin/paster --plugin=ckan sysadmin add admin --config=/etc/ckan/default/ckan.ini

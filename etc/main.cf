@@ -1,0 +1,5 @@
+mynetworks_style = host
+myorigin = /etc/mailname
+inet_interfaces = loopback-only
+mydestination =
+relay_domains =
