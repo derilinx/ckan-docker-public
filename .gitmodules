@@ -3,4 +3,4 @@
 	url = https://github.com/derilinx/ckanext-dietstars.git
 [submodule "extensions/ckanext-nrgi"]
 	path = extensions/ckanext-nrgi
-	url = https://github.com/derilinx/ckanext-nrgi.git
+	url = https://github.com/derilinx/ckanext-nrgi-published.git
