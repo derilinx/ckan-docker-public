@@ -41,4 +41,4 @@ ckan_deb/DEBIAN/prerm
 node_modules/
 
 # JetBrains IDEs
-.idea/
+.idea
