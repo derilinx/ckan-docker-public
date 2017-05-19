@@ -19,7 +19,7 @@ build:
 
     - docker build -t nrgi/resourcedata.org:$BRANCH.$COMMIT .
     # Create the `latest` tag and force it in case the tag is already there from a previous build
-    - docker tag -f nrgi/resourcedata.org:$BRANCH.$COMMIT nrgi/resourcedata.org:$BRANCH
+    - docker tag nrgi/resourcedata.org:$BRANCH.$COMMIT nrgi/resourcedata.org:$BRANCH
 
     - docker push nrgi/resourcedata.org:$BRANCH
     - docker push nrgi/resourcedata.org:$BRANCH.$COMMIT
