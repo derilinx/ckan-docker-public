@@ -14,12 +14,6 @@ elementIn () {
   return 1
 }
 
-# Normalize branch name
-if [ "$BRANCH" == "nrgi" ]
-then
-  BRANCH="master"
-fi
-
 # Automatic deploy allowed for these branches only.
 DEPLOY_BRANCHES=("staging" "master")
 
