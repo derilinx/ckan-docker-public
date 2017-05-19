@@ -1,0 +1,43 @@
+language: python
+
+branches:
+  only:
+    - staging
+    - nrgi
+
+env:
+  global:
+    # Shippable API token used to trigger deploy
+    - secure: hq0YdHBgaFCg1ENbtsj1MyuaEaRPhvZRaPVnnrnpn0iDbmvw6R5/YK3jBZS6Mc/bRaC4cOmxhqjuQbPtQErRgQhD7XfH6W5xccFgsC6mr8CTV7SS1ohBGqB/9LBX0XYHewhw79ZHDYHTSkb7sRk0xgf1KhcOXC8JB5oqBOhwWd3hS0pOAgNEHyo25I1gbv9/yLAZz+z872LmWUmjUAv4001Oig5yBuUoPA97VN2OdzCHZEu2TuGoiy/m3vibfkZC1iwfZiOYn36C/o/lQoHDhVGtLfG5oihnGoxYfGSoKDvm/Wj+EXZk34I0k+kN7lLle353sHoikcBKjSTVfkbb7A==
+
+build:
+  ci:
+    # Use the `--cache-from` option to use the latest image in the repo as a cache for this build. Available since Docker 1.13
+    # This should speed up the build time.
+    - docker build -t nrgi/resourcedata.org:$BRANCH.$COMMIT --cache-from nrgi/resourcedata.org:$BRANCH .
+
+    # Create the `latest` tag and force it in case the tag is already there from a previous build
+    - docker tag nrgi/resourcedata.org:$BRANCH.$COMMIT nrgi/resourcedata.org:$BRANCH
+
+    - docker push nrgi/resourcedata.org:$BRANCH
+    - docker push nrgi/resourcedata.org:$BRANCH.$COMMIT
+
+    # Trigger deploy through building a repo with deploy configuration
+    - ./shippable-deploy.sh
+
+integrations:
+  hub:
+    - integrationName: nrgiDockerHub
+      type: docker
+  notifications:
+    - integrationName: email
+      type: email
+      recipients:
+        - nrgi@vitaminsoftware.com
+      branches:
+        only:
+          - master
+          - staging
+          - 69-build-docker-repo
+      on_success: change
+      on_failure: always
