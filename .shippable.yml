@@ -12,8 +12,10 @@ env:
 
 build:
   ci:
+    # Pull latest image to be used as cache
+    - docker pull nrgi/resourcedata.org:$BRANCH || echo 'Cache not available'
+
     # Use the `--cache-from` option to use the latest image in the repo as a cache for this build. Available since Docker 1.13
-    # This should speed up the build time.
     - docker build -t nrgi/resourcedata.org:$BRANCH.$COMMIT --cache-from nrgi/resourcedata.org:$BRANCH .
 
     # Create the `latest` tag and force it in case the tag is already there from a previous build
@@ -38,6 +40,5 @@ integrations:
         only:
           - master
           - staging
-          - 69-build-docker-repo
       on_success: change
       on_failure: always
