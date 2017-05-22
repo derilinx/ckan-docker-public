@@ -42,6 +42,10 @@ write_config () {
       "ckan.datastore.read_url = $DATASTORE_DB_URL" \
       "ckan.datapusher.url = $DATAPUSHER_URL"
 
+  # Print error reports to the error stream to be shown in the console
+  "$CKAN_HOME"/bin/paster --plugin=ckan config-tool -s DEFAULT "$CONFIG"\
+      "show_exceptions_in_wsgi_errors = true"
+
   if [ -n "$ERROR_EMAIL" ]; then
     sed -i -e "s&^#email_to.*&email_to = ${ERROR_EMAIL}&" "$CONFIG"
   fi
