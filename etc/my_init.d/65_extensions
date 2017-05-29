@@ -1,18 +1,18 @@
 #!/bin/sh
 set -eu
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = stats text_view image_view recline_view recline_grid_view recline_graph_view recline_map_view webpage_view datastore datapusher spatial_metadata spatial_query officedocs_view dcat dcat_json_interface nrgi pages pdf_view geo_view geojson_view wmts_view resource_proxy scheming_datasets s3filestore"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = stats text_view image_view recline_view recline_grid_view recline_graph_view recline_map_view webpage_view datastore datapusher spatial_metadata spatial_query officedocs_view dcat dcat_json_interface nrgi pages pdf_view geo_view geojson_view wmts_view resource_proxy scheming_datasets"
 
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = recline_view geojson_view image_view text_view recline_view pdf_view officedocs_view geo_view geojson_view wmts_view"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.pages.allow_html = True"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.geoview.ol_viewer.formats = wms wfs gml kml arcgis_rest"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_secret_access_key= $AWS_SECRET_ACCESS_KEY"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_bucket_name = $AWS_BUCKET_NAME"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_storage_path = $AWS_STORAGE_PATH"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.region_name = $AWS_REGION_NAME" #e.g. eu-central-1
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.signature_version = $AWS_SIGNATURE_VERSION" #s3 or s3v4
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.host_name = $AWS_HOST_NAME" #Seems to not be in use (yet?)
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID"
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_secret_access_key= $AWS_SECRET_ACCESS_KEY"
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_bucket_name = $AWS_BUCKET_NAME"
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_storage_path = $AWS_STORAGE_PATH"
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.region_name = $AWS_REGION_NAME" #e.g. eu-central-1
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.signature_version = $AWS_SIGNATURE_VERSION" #s3 or s3v4
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.host_name = $AWS_HOST_NAME" #Seems to not be in use (yet?)
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.filesystem_download_fallback = false"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.extra_resource_fields = answers questions assessments"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json"
