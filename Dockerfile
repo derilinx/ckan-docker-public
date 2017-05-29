@@ -58,7 +58,7 @@ RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-pdfview.g
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pages.git#egg=ckanext-pages'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-dcat.git#egg=ckanext-dcat'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-dcat/requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/okfn/ckanext-s3filestore.git#egg=ckanext-s3filestore'
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/keitaroinc/ckanext-s3filestore.git@boto3-fix#egg=ckanext-s3filestore'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-s3filestore/requirements.txt
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-scheming/requirements.txt
