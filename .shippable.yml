@@ -2,6 +2,7 @@ language: python
 
 branches:
   only:
+    - nrgi
     - staging
 
 env:
@@ -37,7 +38,7 @@ integrations:
         - nrgi@vitaminsoftware.com
       branches:
         only:
-          - master
+          - nrgi
           - staging
       on_success: change
       on_failure: always
