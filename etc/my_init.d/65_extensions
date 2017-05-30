@@ -17,3 +17,5 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.extra_resource_fields = answers questions assessments"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
+#We use document type to distinguish RGI datasets but leave search behaviour alone
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.search.show_all_types = False"
