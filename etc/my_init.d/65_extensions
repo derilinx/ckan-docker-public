@@ -3,7 +3,7 @@ set -eu
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = stats text_view image_view recline_view recline_grid_view recline_graph_view recline_map_view webpage_view datastore datapusher spatial_metadata spatial_query officedocs_view dcat dcat_json_interface nrgi pages pdf_view geo_view geojson_view wmts_view resource_proxy scheming_datasets s3filestore googleanalytics"
 
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = recline_view geojson_view image_view text_view recline_view pdf_view officedocs_view geo_view geojson_view wmts_view"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = geojson_view image_view text_view recline_view pdf_view officedocs_view geo_view wmts_view"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.pages.allow_html = True"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.geoview.ol_viewer.formats = wms wfs gml kml arcgis_rest"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID"
