@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = stats text_view image_view recline_view recline_grid_view recline_graph_view recline_map_view webpage_view datastore datapusher spatial_metadata spatial_query officedocs_view dcat dcat_json_interface nrgi pages pdf_view geo_view geojson_view wmts_view resource_proxy scheming_datasets s3filestore"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = stats text_view image_view recline_view recline_grid_view recline_graph_view recline_map_view webpage_view datastore datapusher spatial_metadata spatial_query officedocs_view dcat dcat_json_interface nrgi pages pdf_view geo_view geojson_view wmts_view resource_proxy scheming_datasets s3filestore googleanalytics"
 
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = recline_view geojson_view image_view text_view recline_view pdf_view officedocs_view geo_view geojson_view wmts_view"
@@ -17,6 +17,7 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.extra_resource_fields = answers questions assessments"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
 #We use document type to distinguish RGI datasets
 #Uncomment to show all datasets on the dataset page
 #$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.search.show_all_types = True"

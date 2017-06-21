@@ -62,7 +62,8 @@ RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/keitaroinc/ckanext-s3f
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-s3filestore/requirements.txt
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-scheming/requirements.txt
-
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-googleanalytics#egg=ckanext-googleanalytics'
+RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-googleanalytics/requirements.txt
 # http://serverfault.com/a/711172
 # get apache logs in docker-compose logs ckan
 RUN ln -sf /proc/self/fd/1 /var/log/apache2/ckan_default.custom.log && \
