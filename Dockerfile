@@ -54,7 +54,7 @@ RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-geoview.g
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/jqnatividad/ckanext-officedocs.git#egg=ckanext-officedocs'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-spatial.git#egg=ckanext-spatial'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-pdfview.git#egg=ckanext-pdfview'
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pdfview.git#egg=ckanext-pdfview'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pages.git#egg=ckanext-pages'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-dcat.git#egg=ckanext-dcat'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-dcat/requirements.txt
