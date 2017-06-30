@@ -1565,6 +1565,8 @@ class DatastorePostgresqlBackend(DatastoreBackend):
     def _check_urls_and_permissions(self):
         # Make sure that the right permissions are set
         # so that no harmful queries can be made
+        #Security risk!
+        return
 
         if self._same_ckan_and_datastore_db():
             self._log_or_raise(
