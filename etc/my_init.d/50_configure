@@ -41,7 +41,8 @@ write_config () {
       "ckan.datastore.write_url = $DATASTORE_DB_URL" \
       "ckan.datastore.read_url = $DATASTORE_DB_URL" \
       "ckan.datapusher.url = $DATAPUSHER_URL" \
-      "ckan.favicon = https://resourcegovernance.org/sites/default/files/favicon.ico"
+      "ckan.favicon = https://resourcegovernance.org/sites/default/files/favicon.ico" \
+      "ckan.max_resource_size = ${CKAN_MAX_RESOURCE_SIZE}"
 
   # Print error reports to the error stream to be shown in the console
   "$CKAN_HOME"/bin/paster --plugin=ckan config-tool -s DEFAULT "$CONFIG"\
