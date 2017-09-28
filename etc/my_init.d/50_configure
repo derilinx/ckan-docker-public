@@ -19,7 +19,8 @@ service postfix restart
 service postfix reload
 
 # Add an extra user to datastore DB
-if [ -z "$DB_ENV_DATASTORE_PASS" ]; then
+export x=""
+if [ -z ${DB_ENV_DATASTORE_PASS+x} ]; then
   echo "Not creating user because DB_ENV_DATASTORE_PASS not set or empty; assuming user is already there...";
 else
   PGPASSWORD="$DB_ENV_DATASTORE_PASS" PGHOST="$DB_ENV_DATASTORE_HOST" PGUSER="$DB_ENV_DATASTORE_USER" createuser -S -D -R -l datastore_ro || echo "Command failed; user probably already exists";
