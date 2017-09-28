@@ -24,8 +24,8 @@ if [ -z ${DB_ENV_DATASTORE_PASS+x} ]; then
   echo "Not creating user because DB_ENV_DATASTORE_PASS not set or empty; assuming user is already there...";
 else
   PGPASSWORD="$DB_ENV_DATASTORE_PASS" PGHOST="$DB_ENV_DATASTORE_HOST" PGUSER="$DB_ENV_DATASTORE_USER" createuser -S -D -R -l datastore_ro || echo "Command failed; user probably already exists";
+  echo ALTER ROLE "$DB_ENV_DATASTORE_RO_USER" WITH PASSWORD "'$DB_ENV_DATASTORE_RO_PASS'" | psql "${DATASTORE_DB_URL}"
 fi
-echo "ALTER ROLE datastore_ro WITH PASSWORD 'datastore_ro'" | psql "${DATASTORE_DB_URL}"
 
 CONFIG="${CKAN_CONFIG}/ckan.ini"
 
