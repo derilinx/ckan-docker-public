@@ -18,6 +18,10 @@ echo ${SITE_HOST} > /etc/mailname
 service postfix restart
 service postfix reload
 
+# Add an extra user to datastore DB
+PGPASSWORD="$DB_ENV_DATASTORE_PASS" PGHOST="$DB_ENV_DATASTORE_HOST" PGUSER="$DB_ENV_DATASTORE_USER" createuser -S -D -R -l datastore_ro || echo "Command failed; user probably already exists"
+echo "ALTER ROLE datastore_ro WITH PASSWORD 'datastore_ro'" | psql "${DATASTORE_DB_URL}"
+
 CONFIG="${CKAN_CONFIG}/ckan.ini"
 
 abort () {
@@ -39,7 +43,7 @@ write_config () {
       "ckan.site_url = ${SITE_SCHEME}${SITE_HOST}" \
       "ckan.redis.url = ${REDIS_URL}" \
       "ckan.datastore.write_url = $DATASTORE_DB_URL" \
-      "ckan.datastore.read_url = $DATASTORE_DB_URL" \
+      "ckan.datastore.read_url = $DATASTORE_DB_RO_URL" \
       "ckan.datapusher.url = $DATAPUSHER_URL" \
       "ckan.favicon = https://resourcegovernance.org/sites/default/files/favicon.ico"
 

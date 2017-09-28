@@ -38,8 +38,12 @@ RUN virtualenv $CKAN_HOME
 RUN mkdir -p $CKAN_HOME $CKAN_CONFIG $CKAN_DATA
 RUN chown www-data:www-data $CKAN_DATA
 
+ADD ./ckan-home/requirement-setuptools.txt $CKAN_HOME/src/ckan/requirement-setuptools.txt
+RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/requirement-setuptools.txt
 ADD ./ckan-home/requirements.txt $CKAN_HOME/src/ckan/requirements.txt
 RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/requirements.txt
+ADD ./ckan-home/dev-requirements.txt $CKAN_HOME/src/ckan/dev-requirements.txt
+RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/dev-requirements.txt
 ADD ./ckan-home $CKAN_HOME/src/ckan/
 RUN $CKAN_HOME/bin/pip install -e $CKAN_HOME/src/ckan/
 RUN ln -s $CKAN_HOME/src/ckan/ckan/config/who.ini $CKAN_CONFIG/who.ini
