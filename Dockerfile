@@ -48,8 +48,8 @@ ADD ./etc/apache.wsgi $CKAN_CONFIG/apache.wsgi
 # Install extensions
 # local ones first, more likely to fail
 ADD ./extensions $CKAN_EXTENSIONS
-RUN $CKAN_HOME/bin/pip install -e  $CKAN_EXTENSIONS/ckanext-dietstars/
 RUN $CKAN_HOME/bin/pip install -e  $CKAN_EXTENSIONS/ckanext-nrgi/
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-dietstars.git#egg=ckanext-dietstars'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-geoview.git#egg=ckanext-geoview'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/jqnatividad/ckanext-officedocs.git#egg=ckanext-officedocs'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-spatial.git#egg=ckanext-spatial'
