@@ -56,13 +56,18 @@ RUN $CKAN_HOME/bin/pip install -e  $CKAN_EXTENSIONS/ckanext-nrgi/
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-dietstars.git#egg=ckanext-dietstars'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-geoview.git#egg=ckanext-geoview'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/jqnatividad/ckanext-officedocs.git#egg=ckanext-officedocs'
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-spatial.git#egg=ckanext-spatial'
+RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pdfview.git#egg=ckanext-pdfview'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pages.git#egg=ckanext-pages'
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-dcat.git#egg=ckanext-dcat'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-dcat/requirements.txt
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/keitaroinc/ckanext-s3filestore.git@boto3-fix#egg=ckanext-s3filestore'
+RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-s3filestore/requirements.txt
 RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming'
 RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-scheming/requirements.txt
+RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-googleanalytics#egg=ckanext-googleanalytics'
+RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-googleanalytics/requirements.txt
 # http://serverfault.com/a/711172
 # get apache logs in docker-compose logs ckan
 RUN ln -sf /proc/self/fd/1 /var/log/apache2/ckan_default.custom.log && \
