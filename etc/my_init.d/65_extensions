@@ -17,6 +17,8 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.host_name = $AWS_HOST_NAME" #Seems to not be in use (yet?)
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.filesystem_download_fallback = false"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.extra_resource_fields = answers questions assessments"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json ckanext.nrgi:schema_datasets.json"
+#"Record" is our catch-all type. See https://github.com/ckan/ckan/pull/3807
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json ckanext.nrgi:schema_datasets.json ckanext.nrgi:schema_records.json"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.search.show_all_types = record"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
