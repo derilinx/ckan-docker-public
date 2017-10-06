@@ -35,8 +35,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install \
 
 # Install CKAN
 RUN virtualenv $CKAN_HOME
-RUN mkdir -p $CKAN_HOME $CKAN_CONFIG $CKAN_DATA
-RUN chown www-data:www-data $CKAN_DATA
+RUN mkdir -p $CKAN_HOME $CKAN_CONFIG $CKAN_DATA $CKAN_DATA/storage/uploads
+RUN chown -R www-data:www-data $CKAN_DATA
 
 ADD ./ckan-home/requirement-setuptools.txt $CKAN_HOME/src/ckan/requirement-setuptools.txt
 RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/requirement-setuptools.txt
