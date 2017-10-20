@@ -4,13 +4,16 @@ import requests
 import unittest
 import json
 import httpretty
+import nose
 
-from ckan.tests.helpers import _get_test_app
+import paste.fixture
 from ckan.common import config
 
 import ckan.model as model
+import ckan.tests.legacy as tests
 import ckan.plugins as p
 import ckan.lib.create_test_data as create_test_data
+import ckan.config.middleware as middleware
 import ckanext.resourceproxy.controller as controller
 import ckanext.resourceproxy.plugin as proxy
 
@@ -45,17 +48,16 @@ def set_resource_url(url):
     return {'resource': resource, 'package': package}
 
 
-class TestProxyPrettyfied(unittest.TestCase):
+class TestProxyPrettyfied(tests.WsgiAppCase, unittest.TestCase):
 
     serving = False
 
     @classmethod
     def setup_class(cls):
         cls._original_config = config.copy()
-        cls.app = _get_test_app()
-        if not p.plugin_loaded('resource_proxy'):
-            p.load('resource_proxy')
         config['ckan.plugins'] = 'resource_proxy'
+        wsgiapp = middleware.make_app(config['global_conf'], **config)
+        cls.app = paste.fixture.TestApp(wsgiapp)
         create_test_data.CreateTestData.create()
 
     @classmethod
@@ -102,7 +104,7 @@ class TestProxyPrettyfied(unittest.TestCase):
         result = self.app.get(proxied_url, status='*')
         # we expect a 409 because the resourceproxy got an error (404)
         # from the server
-        assert result.status_int == 409, result.status
+        assert result.status == 409, result.status
         assert '404' in result.body
 
     @httpretty.activate
@@ -115,7 +117,7 @@ class TestProxyPrettyfied(unittest.TestCase):
 
         proxied_url = proxy.get_proxified_resource_url(self.data_dict)
         result = self.app.get(proxied_url, status='*')
-        assert result.status_int == 409, result.status
+        assert result.status == 409, result.status
         assert 'too large' in result.body, result.body
 
     @httpretty.activate
@@ -128,7 +130,7 @@ class TestProxyPrettyfied(unittest.TestCase):
 
         proxied_url = proxy.get_proxified_resource_url(self.data_dict)
         result = self.app.get(proxied_url, status='*')
-        assert result.status_int == 409, result.status
+        assert result.status == 409, result.status
         assert 'too large' in result.body, result.body
 
     @httpretty.activate
@@ -137,7 +139,7 @@ class TestProxyPrettyfied(unittest.TestCase):
 
         proxied_url = proxy.get_proxified_resource_url(self.data_dict)
         result = self.app.get(proxied_url, status='*')
-        assert result.status_int == 409, result.status
+        assert result.status == 409, result.status
         assert 'Invalid URL' in result.body, result.body
 
     def test_non_existent_url(self):
@@ -151,7 +153,7 @@ class TestProxyPrettyfied(unittest.TestCase):
 
         proxied_url = proxy.get_proxified_resource_url(self.data_dict)
         result = self.app.get(proxied_url, status='*')
-        assert result.status_int == 502, result.status
+        assert result.status == 502, result.status
         assert 'connection error' in result.body, result.body
 
     def test_proxied_resource_url_proxies_http_and_https_by_default(self):

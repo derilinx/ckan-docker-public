@@ -29,14 +29,12 @@ from bleach import clean as clean_html, ALLOWED_TAGS, ALLOWED_ATTRIBUTES
 from pylons import url as _pylons_default_url
 from ckan.common import config, is_flask_request
 from flask import redirect as _flask_redirect
-from flask import _request_ctx_stack, current_app
 from routes import redirect_to as _routes_redirect_to
 from routes import url_for as _routes_default_url_for
-from flask import url_for as _flask_default_url_for
-from werkzeug.routing import BuildError as FlaskRouteBuildError
 import i18n
 
 import ckan.exceptions
+import ckan.lib.fanstatic_resources as fanstatic_resources
 import ckan.model as model
 import ckan.lib.formatters as formatters
 import ckan.lib.maintain as maintain
@@ -221,184 +219,43 @@ def get_site_protocol_and_host():
     return (None, None)
 
 
-def _get_auto_flask_context():
-    '''
-    Provides a Flask test request context if we are outside the context
-    of a web request (tests or CLI)
-    '''
-
-    from ckan.config.middleware import _internal_test_request_context
-    from ckan.lib.cli import _cli_test_request_context
-
-    # This is a normal web request, there is a request context present
-    if _request_ctx_stack.top:
-        return None
-
-    # We are outside a web request. A test web application was created
-    # (and with it a test request context with the relevant configuration)
-    if _internal_test_request_context:
-        return _internal_test_request_context
-
-    # We are outside a web request. This is a CLI command. A test request
-    # context was created when setting it up
-    if _cli_test_request_context:
-        return _cli_test_request_context
-
-
 @core_helper
 def url_for(*args, **kw):
-    '''Return the URL for an endpoint given some parameters.
+    '''Return the URL for the given controller, action, id, etc.
 
-    This is a wrapper for :py:func:`flask.url_for`
-    and :py:func:`routes.url_for` that adds some extra features that CKAN
-    needs.
+    Usage::
 
-    To build a URL for a Flask view, pass the name of the blueprint and the
-    view function separated by a period ``.``, plus any URL parameters::
+        import ckan.plugins.toolkit as toolkit
 
-        url_for('api.action', ver=3, logic_function='status_show')
-        # Returns /api/3/action/status_show
-
-    For a fully qualified URL pass the ``_external=True`` parameter. This
-    takes the ``ckan.site_url`` and ``ckan.root_path`` settings into account::
-
-        url_for('api.action', ver=3, logic_function='status_show',
-                _external=True)
-        # Returns http://example.com/api/3/action/status_show
-
-    URLs built by Pylons use the Routes syntax::
-
-        url_for(controller='package', action='read', id='my_dataset')
-        # Returns '/dataset/my_dataset'
+        url = toolkit.url_for(controller='package', action='read',
+                              id='my_dataset')
+        => returns '/dataset/my_dataset'
 
     Or, using a named route::
 
-        url_for('dataset_read', id='changed')
-        # Returns '/dataset/changed'
+        toolkit.url_for('dataset_read', id='changed')
 
-    Use ``qualified=True`` for a fully qualified URL when targeting a Pylons
-    endpoint.
+    This is a wrapper for :py:func:`routes.url_for` that adds some extra
+    features that CKAN needs.
 
-    For backwards compatibility, an effort is made to support the Pylons syntax
-    when building a Flask URL, but this support might be dropped in the future,
-    so calls should be updated.
     '''
-    # Get the actual string code for the locale
     locale = kw.pop('locale', None)
     if locale and isinstance(locale, i18n.Locale):
         locale = i18n.get_identifier_from_locale_class(locale)
-
     # remove __ckan_no_root and add after to not pollute url
     no_root = kw.pop('__ckan_no_root', False)
-
-    # All API URLs generated should provide the version number
-    if kw.get('controller') == 'api' or args and args[0].startswith('api.'):
+    # routes will get the wrong url for APIs if the ver is not provided
+    if kw.get('controller') == 'api':
         ver = kw.get('ver')
         if not ver:
-            raise Exception('API URLs must specify the version (eg ver=3)')
-
-    _auto_flask_context = _get_auto_flask_context()
-
-    try:
-        if _auto_flask_context:
-            _auto_flask_context.push()
-
-        # First try to build the URL with the Flask router
-        my_url = _url_for_flask(*args, **kw)
-
-    except FlaskRouteBuildError:
-
-        # If it doesn't succeed, fallback to the Pylons router
-        my_url = _url_for_pylons(*args, **kw)
-    finally:
-        if _auto_flask_context:
-            _auto_flask_context.pop()
-
-    # Add back internal params
-    kw['__ckan_no_root'] = no_root
-
-    # Rewrite the URL to take the locale and root_path into account
-    return _local_url(my_url, locale=locale, **kw)
-
-
-def _url_for_flask(*args, **kw):
-    '''Build a URL using the Flask router
-
-    This function should not be called directly, use ``url_for`` instead
-
-    This function tries to support the Pylons syntax for ``url_for`` and adapt
-    it to the Flask one, eg::
-
-        # Pylons
-        url_for(controller='api', action='action', ver=3, qualified=True)
-
-        # Flask
-        url_for('api.action', ver=3, _external=True)
-
-
-    Raises :py:exception:`werkzeug.routing.BuildError` if it couldn't
-    generate a URL.
-    '''
-    if (len(args) and '_' in args[0]
-            and '.' not in args[0]
-            and not args[0].startswith('/')):
-        # Try to translate Python named routes to Flask endpoints
-        # eg `dataset_new` -> `dataset.new`
-        args = (args[0].replace('_', '.', 1), )
-    elif kw.get('controller') and kw.get('action'):
-        # If `controller` and `action` are passed, build a Flask endpoint
-        # from them
-        # eg controller='user', action='login' -> 'user.login'
-        args = ('{0}.{1}'.format(kw.pop('controller'), kw.pop('action')),)
-
-    # Support Pylons' way of asking for full URLs
-
-    external = kw.pop('_external', False) or kw.pop('qualified', False)
-
-    # The API routes used to require a slash on the version number, make sure
-    # we remove it
-    if (args and args[0].startswith('api.') and
-            isinstance(kw.get('ver'), basestring) and
-            kw['ver'].startswith('/')):
-        kw['ver'] = kw['ver'].replace('/', '')
-
-    # Try to build the URL with flask.url_for
-    my_url = _flask_default_url_for(*args, **kw)
-
-    if external:
-        # Don't rely on the host generated by Flask, as SERVER_NAME might not
-        # be set or might be not be up to date (as in tests changing
-        # `ckan.site_url`). Contrary to the Routes mapper, there is no way in
-        # Flask to pass the host explicitly, so we rebuild the URL manually
-        # based on `ckan.site_url`, which is essentially what we did on Pylons
-        protocol, host = get_site_protocol_and_host()
-        parts = urlparse.urlparse(my_url)
-        my_url = urlparse.urlunparse((protocol, host, parts.path, parts.params,
-                                      parts.query, parts.fragment))
-
-    return my_url
-
-
-def _url_for_pylons(*args, **kw):
-    '''Build a URL using the Pylons (Routes) router
-
-    This function should not be called directly, use ``url_for`` instead
-    '''
-
-    # We need to provide protocol and host to get full URLs, get them from
-    # ckan.site_url
-    if kw.get('qualified', False) or kw.get('_external', False):
+            raise Exception('api calls must specify the version! e.g. ver=3')
+        # fix ver to include the slash
+        kw['ver'] = '/%s' % ver
+    if kw.get('qualified', False):
         kw['protocol'], kw['host'] = get_site_protocol_and_host()
-
-    # The Pylons API routes require a slask on the version number for some
-    # reason
-    if kw.get('controller') == 'api' and kw.get('ver'):
-        if (isinstance(kw['ver'], int) or
-                not kw['ver'].startswith('/')):
-            kw['ver'] = '/%s' % kw['ver']
-
-    # Try to build the URL with routes.url_for
-    return _routes_default_url_for(*args, **kw)
+    my_url = _routes_default_url_for(*args, **kw)
+    kw['__ckan_no_root'] = no_root
+    return _local_url(my_url, locale=locale, **kw)
 
 
 @core_helper
@@ -685,23 +542,10 @@ def are_there_flash_messages():
 
 def _link_active(kwargs):
     ''' creates classes for the link_to calls '''
-    if is_flask_request():
-        return _link_active_flask(kwargs)
-    else:
-        return _link_active_pylons(kwargs)
-
-
-def _link_active_pylons(kwargs):
     highlight_actions = kwargs.get('highlight_actions',
                                    kwargs.get('action', '')).split()
     return (c.controller == kwargs.get('controller')
             and c.action in highlight_actions)
-
-
-def _link_active_flask(kwargs):
-    blueprint, endpoint = request.url_rule.endpoint.split('.')
-    return(kwargs.get('controller') == blueprint and
-           kwargs.get('action') == endpoint)
 
 
 def _link_to(text, *args, **kwargs):
@@ -744,30 +588,6 @@ def nav_link(text, *args, **kwargs):
     :param condition: if ``False`` then no link is returned
 
     '''
-    if is_flask_request():
-        return nav_link_flask(text, *args, **kwargs)
-    else:
-        return nav_link_pylons(text, *args, **kwargs)
-
-
-def nav_link_flask(text, *args, **kwargs):
-    if len(args) > 1:
-        raise Exception('Too many unnamed parameters supplied')
-    blueprint, endpoint = request.url_rule.endpoint.split('.')
-    if args:
-        kwargs['controller'] = blueprint or None
-    named_route = kwargs.pop('named_route', '')
-    if kwargs.pop('condition', True):
-        if named_route:
-            link = _link_to(text, named_route, **kwargs)
-        else:
-            link = _link_to(text, **kwargs)
-    else:
-        link = ''
-    return link
-
-
-def nav_link_pylons(text, *args, **kwargs):
     if len(args) > 1:
         raise Exception('Too many unnamed parameters supplied')
     if args:
@@ -960,9 +780,8 @@ def get_facet_items_dict(facet, limit=None, exclude_active=False):
             facets.append(dict(active=True, **facet_item))
     # Sort descendingly by count and ascendingly by case-sensitive display name
     facets.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
-    if hasattr(c, 'search_facets_limits'):
-        if c.search_facets_limits and limit is None:
-            limit = c.search_facets_limits.get(facet)
+    if c.search_facets_limits and limit is None:
+        limit = c.search_facets_limits.get(facet)
     # zero treated as infinite for hysterical raisins
     if limit is not None and limit > 0:
         return facets[:limit]
@@ -1266,7 +1085,7 @@ def gravatar(email_hash, size=100, default=None):
         default = urllib.quote(default, safe='')
 
     return literal('''<img src="//gravatar.com/avatar/%s?s=%d&amp;d=%s"
-        class="gravatar" width="%s" height="%s" alt="Gravatar" />'''
+        class="gravatar" width="%s" height="%s" alt="" />'''
                    % (email_hash, size, default, size, size)
                    )
 
@@ -1288,7 +1107,7 @@ class Page(paginate.Page):
 
     def pager(self, *args, **kwargs):
         kwargs.update(
-            format=u"<div class='pagination-wrapper'><ul class='pagination'>"
+            format=u"<div class='pagination pagination-centered'><ul>"
             "$link_previous ~2~ $link_next</ul></div>",
             symbol_previous=u'«', symbol_next=u'»',
             curpage_attr={'class': 'active'}, link_attr={}
@@ -1821,7 +1640,6 @@ def remove_url_param(key, value=None, replace=None, controller=None,
 
 @core_helper
 def include_resource(resource):
-    import ckan.lib.fanstatic_resources as fanstatic_resources
     r = getattr(fanstatic_resources, resource)
     r.need()
 
@@ -1833,8 +1651,6 @@ def urls_for_resource(resource):
 
     NOTE: This is for special situations only and is not the way to generally
     include resources.  It is advised not to use this function.'''
-    import ckan.lib.fanstatic_resources as fanstatic_resources
-
     r = getattr(fanstatic_resources, resource)
     resources = list(r.resources)
     core = fanstatic_resources.fanstatic_extensions.core

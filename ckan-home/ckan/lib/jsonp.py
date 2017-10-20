@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-# TODO: Remove once the old Pylons API controller is deleted
-
 import decorator
 
 from ckan.common import json, request, response
@@ -22,7 +20,7 @@ def to_jsonp(data):
 def jsonpify(func, *args, **kwargs):
     """A decorator that reformats the output as JSON; or, if the
     *callback* parameter is specified (in the HTTP request), as JSONP.
-
+    
     Very much modelled after pylons.decorators.jsonify .
     """
     data = func(*args, **kwargs)

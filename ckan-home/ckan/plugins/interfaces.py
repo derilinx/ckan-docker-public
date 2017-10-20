@@ -240,10 +240,7 @@ class IDomainObjectModification(Interface):
 
     def notify_after_commit(self, entity, operation):
         u'''
-        ** DEPRECATED **
-
-        Supposed to send a notification after entity modification, but it
-        doesn't work.
+        Send a notification after entity modification.
 
         :param entity: instance of module.Package.
         :param operation: 'new', 'changed' or 'deleted'.
@@ -1581,7 +1578,10 @@ class IFacets(Interface):
 
 
 class IAuthenticator(Interface):
-    u'''Allows custom authentication methods to be integrated into CKAN.'''
+    u'''EXPERIMENTAL
+
+    Allows custom authentication methods to be integrated into CKAN.
+    Currently it is experimental and the interface may change.'''
 
     def identify(self):
         u'''called to identify the user.

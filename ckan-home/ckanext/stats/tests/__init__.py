@@ -1,8 +1,8 @@
 # encoding: utf-8
 
-from ckan.tests.helpers import _get_test_app
+import paste.fixture
 from ckan.common import config
-
+from ckan.config.middleware import make_app
 
 class StatsFixture(object):
 
@@ -10,7 +10,8 @@ class StatsFixture(object):
     def setup_class(cls):
         cls._original_config = config.copy()
         config['ckan.plugins'] = 'stats'
-        cls.app = _get_test_app()
+        wsgiapp = make_app(config['global_conf'], **config)
+        cls.app = paste.fixture.TestApp(wsgiapp)
 
     @classmethod
     def teardown_class(cls):

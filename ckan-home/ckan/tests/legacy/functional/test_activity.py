@@ -4,7 +4,7 @@ from ckan.common import config
 from pylons.test import pylonsapp
 from paste.deploy.converters import asbool
 import paste.fixture
-from ckan.lib.helpers import url_for
+from routes import url_for
 from nose import SkipTest
 
 import ckan
@@ -44,7 +44,7 @@ class TestActivity(HtmlCheckMethods):
                 'fullname': 'Billy Beane',
                 'about': 'General Manager, Oakland Athletics',
                 'email': 'billy@beane.org',
-                'password': 'TestPassword1'}
+                'password': 'b1lly'}
         context = {
             'model': ckan.model,
             'session': ckan.model.Session,

@@ -162,8 +162,7 @@ class PackageController(base.BaseController):
 
         def remove_field(key, value=None, replace=None):
             return h.remove_url_param(key, value=value, replace=replace,
-                                      controller='package', action='search',
-                                      alternative_url=package_type)
+                                      controller='package', action='search')
 
         c.remove_field = remove_field
 

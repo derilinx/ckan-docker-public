@@ -77,7 +77,7 @@ class TestDatastoreUpsertNewTests(object):
         helpers.call_action('datastore_upsert', **data)
 
 
-class TestDatastoreUpsert():
+class TestDatastoreUpsert(tests.WsgiAppCase):
     sysadmin_user = None
     normal_user = None
 
@@ -85,7 +85,6 @@ class TestDatastoreUpsert():
     def setup_class(cls):
         if not tests.is_datastore_supported():
             raise nose.SkipTest("Datastore not supported")
-        cls.app = helpers._get_test_app()
         p.load('datastore')
         ctd.CreateTestData.create()
         cls.sysadmin_user = model.User.get('testsysadmin')
@@ -329,7 +328,7 @@ class TestDatastoreUpsert():
 
 
 
-class TestDatastoreInsert():
+class TestDatastoreInsert(tests.WsgiAppCase):
     sysadmin_user = None
     normal_user = None
 
@@ -337,7 +336,6 @@ class TestDatastoreInsert():
     def setup_class(cls):
         if not tests.is_datastore_supported():
             raise nose.SkipTest("Datastore not supported")
-        cls.app = helpers._get_test_app()
         p.load('datastore')
         ctd.CreateTestData.create()
         cls.sysadmin_user = model.User.get('testsysadmin')
@@ -431,7 +429,7 @@ class TestDatastoreInsert():
         assert results.rowcount == 3
 
 
-class TestDatastoreUpdate():
+class TestDatastoreUpdate(tests.WsgiAppCase):
     sysadmin_user = None
     normal_user = None
 
@@ -439,7 +437,6 @@ class TestDatastoreUpdate():
     def setup_class(cls):
         if not tests.is_datastore_supported():
             raise nose.SkipTest("Datastore not supported")
-        cls.app = helpers._get_test_app()
         p.load('datastore')
         ctd.CreateTestData.create()
         cls.sysadmin_user = model.User.get('testsysadmin')

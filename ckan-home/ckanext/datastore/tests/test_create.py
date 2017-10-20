@@ -2,16 +2,18 @@
 
 import json
 import nose
+import sys
 from nose.tools import assert_equal, raises
 
 import sqlalchemy.orm as orm
-from ckan.tests.helpers import _get_test_app
+import paste.fixture
 
 from ckan.common import config
 import ckan.plugins as p
 import ckan.lib.create_test_data as ctd
 import ckan.model as model
 import ckan.tests.legacy as tests
+import ckan.config.middleware as middleware
 import ckan.tests.helpers as helpers
 import ckan.tests.factories as factories
 
@@ -254,14 +256,15 @@ class TestDatastoreCreateNewTests(object):
         result = helpers.call_action('datastore_create', **data)
 
 
-class TestDatastoreCreate():
+class TestDatastoreCreate(tests.WsgiAppCase):
     sysadmin_user = None
     normal_user = None
 
     @classmethod
     def setup_class(cls):
 
-        cls.app = _get_test_app()
+        wsgiapp = middleware.make_app(config['global_conf'], **config)
+        cls.app = paste.fixture.TestApp(wsgiapp)
         if not tests.is_datastore_supported():
             raise nose.SkipTest("Datastore not supported")
         p.load('datastore')
@@ -536,6 +539,7 @@ class TestDatastoreCreate():
         res = res_dict['result']
         assert res['resource_id'] == data['resource_id']
         assert res['fields'] == data['fields'], res['fields']
+        assert res['records'] == data['records']
 
         c = self.Session.connection()
         results = c.execute('select * from "{0}"'.format(resource.id))
@@ -769,6 +773,7 @@ class TestDatastoreCreate():
         assert res_dict['success'] is True
         res = res_dict['result']
         assert res['fields'] == data['fields'], res['fields']
+        assert res['records'] == data['records']
 
         # Get resource details
         data = {
@@ -982,14 +987,12 @@ class TestDatastoreCreateTriggers(DatastoreFunctionalTestBase):
         ds = factories.Dataset()
 
         try:
-            app = self._get_test_app()
-            with app.flask_app.test_request_context():
-                helpers.call_action(
-                    u'datastore_create',
-                    resource={u'package_id': ds['id']},
-                    fields=[{u'id': u'spam', u'type': u'text'}],
-                    records=[{u'spam': u'SPAM'}, {u'spam': u'EGGS'}],
-                    triggers=[{u'function': u'no_such_trigger_function'}])
+            helpers.call_action(
+                u'datastore_create',
+                resource={u'package_id': ds['id']},
+                fields=[{u'id': u'spam', u'type': u'text'}],
+                records=[{u'spam': u'SPAM'}, {u'spam': u'EGGS'}],
+                triggers=[{u'function': u'no_such_trigger_function'}])
         except ValidationError as ve:
             assert_equal(
                 ve.error_dict,
@@ -1010,15 +1013,12 @@ class TestDatastoreCreateTriggers(DatastoreFunctionalTestBase):
                 NEW.spam := 'spam spam ' || NEW.spam || ' spam';
                 RETURN NEW;
                 END;''')
-
-        app = self._get_test_app()
-        with app.flask_app.test_request_context():
-            res = helpers.call_action(
-                u'datastore_create',
-                resource={u'package_id': ds['id']},
-                fields=[{u'id': u'spam', u'type': u'text'}],
-                records=[{u'spam': u'SPAM'}, {u'spam': u'EGGS'}],
-                triggers=[{u'function': u'spamify_trigger'}])
+        res = helpers.call_action(
+            u'datastore_create',
+            resource={u'package_id': ds['id']},
+            fields=[{u'id': u'spam', u'type': u'text'}],
+            records=[{u'spam': u'SPAM'}, {u'spam': u'EGGS'}],
+            triggers=[{u'function': u'spamify_trigger'}])
         assert_equal(
             helpers.call_action(
                 u'datastore_search',
@@ -1040,19 +1040,16 @@ class TestDatastoreCreateTriggers(DatastoreFunctionalTestBase):
                 NEW.spam := 'spam spam ' || NEW.spam || ' spam';
                 RETURN NEW;
                 END;''')
-
-        app = self._get_test_app()
-        with app.flask_app.test_request_context():
-            res = helpers.call_action(
-                u'datastore_create',
-                resource={u'package_id': ds['id']},
-                fields=[{u'id': u'spam', u'type': u'text'}],
-                triggers=[{u'function': u'more_spam_trigger'}])
-            helpers.call_action(
-                u'datastore_upsert',
-                method=u'insert',
-                resource_id=res['resource_id'],
-                records=[{u'spam': u'BEANS'}, {u'spam': u'SPAM'}])
+        res = helpers.call_action(
+            u'datastore_create',
+            resource={u'package_id': ds['id']},
+            fields=[{u'id': u'spam', u'type': u'text'}],
+            triggers=[{u'function': u'more_spam_trigger'}])
+        helpers.call_action(
+            u'datastore_upsert',
+            method=u'insert',
+            resource_id=res['resource_id'],
+            records=[{u'spam': u'BEANS'}, {u'spam': u'SPAM'}])
         assert_equal(
             helpers.call_action(
                 u'datastore_search',
@@ -1077,14 +1074,12 @@ class TestDatastoreCreateTriggers(DatastoreFunctionalTestBase):
                 RETURN NEW;
                 END;''')
         try:
-            app = self._get_test_app()
-            with app.flask_app.test_request_context():
-                helpers.call_action(
-                    u'datastore_create',
-                    resource={u'package_id': ds['id']},
-                    fields=[{u'id': u'spam', u'type': u'text'}],
-                    records=[{u'spam': u'spam'}, {u'spam': u'EGGS'}],
-                    triggers=[{u'function': u'spamexception_trigger'}])
+            res = helpers.call_action(
+                u'datastore_create',
+                resource={u'package_id': ds['id']},
+                fields=[{u'id': u'spam', u'type': u'text'}],
+                records=[{u'spam': u'spam'}, {u'spam': u'EGGS'}],
+                triggers=[{u'function': u'spamexception_trigger'}])
         except ValidationError as ve:
             assert_equal(
                 ve.error_dict,
@@ -1107,23 +1102,21 @@ class TestDatastoreCreateTriggers(DatastoreFunctionalTestBase):
                 END IF;
                 RETURN NEW;
                 END;''')
-        app = self._get_test_app()
-        with app.flask_app.test_request_context():
-            res = helpers.call_action(
-                u'datastore_create',
-                resource={u'package_id': ds['id']},
-                fields=[{u'id': u'spam', u'type': u'text'}],
-                triggers=[{u'function': u'spamonly_trigger'}])
-            try:
-                helpers.call_action(
-                    u'datastore_upsert',
-                    method=u'insert',
-                    resource_id=res['resource_id'],
-                    records=[{u'spam': u'spam'}, {u'spam': u'BEANS'}])
-            except ValidationError as ve:
-                assert_equal(
-                    ve.error_dict,
-                    {u'records':[
-                        u'"BEANS"? Yeeeeccch!']})
-            else:
-                assert 0, u'no validation error'
+        res = helpers.call_action(
+            u'datastore_create',
+            resource={u'package_id': ds['id']},
+            fields=[{u'id': u'spam', u'type': u'text'}],
+            triggers=[{u'function': u'spamonly_trigger'}])
+        try:
+            helpers.call_action(
+                u'datastore_upsert',
+                method=u'insert',
+                resource_id=res['resource_id'],
+                records=[{u'spam': u'spam'}, {u'spam': u'BEANS'}])
+        except ValidationError as ve:
+            assert_equal(
+                ve.error_dict,
+                {u'records':[
+                    u'"BEANS"? Yeeeeccch!']})
+        else:
+            assert 0, u'no validation error'

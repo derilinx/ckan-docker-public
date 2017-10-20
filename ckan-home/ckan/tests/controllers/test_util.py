@@ -4,7 +4,7 @@ from nose.tools import assert_equal
 from pylons.test import pylonsapp
 import paste.fixture
 
-from ckan.lib.helpers import url_for as url_for
+from routes import url_for as url_for
 
 import ckan.tests.helpers as helpers
 

@@ -4,8 +4,10 @@
 
 '''
 from ckan.common import config
+import webtest
 
 import ckan.model as model
+import ckan.tests.legacy as tests
 
 import ckan.plugins
 import ckan.tests.factories as factories
@@ -20,7 +22,9 @@ class TestExampleIResourceController(object):
 
     def setup(self):
         # Set up the test app
-        self.app = helpers._get_test_app()
+        self.app = ckan.config.middleware.make_app(
+            config['global_conf'], **config)
+        self.app = webtest.TestApp(self.app)
 
     def teardown(self):
         # Unload the plugin

@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 from nose.tools import assert_equal, assert_true, assert_in
-from ckan.lib.helpers import url_for
+from routes import url_for
 from mock import patch
 
 from ckan.tests import factories, helpers
@@ -459,27 +459,26 @@ class TestOrganizationMembership(helpers.FunctionalTestBase):
 
         env = {'REMOTE_USER': user['name'].encode('ascii')}
 
-        with app.flask_app.test_request_context():
-            app.get(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                extra_environ=env,
-                status=403,
-            )
+        app.get(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            extra_environ=env,
+            status=403,
+        )
 
-            app.post(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
-                extra_environ=env,
-                status=403,
-            )
+        app.post(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
+            extra_environ=env,
+            status=403,
+        )
 
     def test_member_users_cannot_add_members(self):
 
@@ -492,49 +491,47 @@ class TestOrganizationMembership(helpers.FunctionalTestBase):
 
         env = {'REMOTE_USER': user['name'].encode('ascii')}
 
-        with app.flask_app.test_request_context():
-            app.get(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                extra_environ=env,
-                status=403,
-            )
+        app.get(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            extra_environ=env,
+            status=403,
+        )
 
-            app.post(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
-                extra_environ=env,
-                status=403,
-            )
+        app.post(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
+            extra_environ=env,
+            status=403,
+        )
 
     def test_anonymous_users_cannot_add_members(self):
         organization = factories.Organization()
 
         app = helpers._get_test_app()
 
-        with app.flask_app.test_request_context():
-            app.get(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                status=403,
-            )
+        app.get(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            status=403,
+        )
 
-            app.post(
-                url_for(
-                    controller='organization',
-                    action='member_new',
-                    id=organization['id'],
-                ),
-                {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
-                status=403,
-            )
+        app.post(
+            url_for(
+                controller='organization',
+                action='member_new',
+                id=organization['id'],
+            ),
+            {'id': 'test', 'username': 'test', 'save': 'save', 'role': 'test'},
+            status=403,
+        )

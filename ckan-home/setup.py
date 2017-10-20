@@ -1,9 +1,7 @@
 # encoding: utf-8
 
-import os
-import os.path
-
 # Avoid problem releasing to pypi from vagrant
+import os
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
@@ -19,26 +17,18 @@ except ImportError:
 from ckan import (__version__, __description__, __long_description__,
                   __license__)
 
-
-#
-# Check setuptools version
-#
-
-def parse_version(s):
-    return map(int, s.split('.'))
-
-HERE = os.path.dirname(__file__)
-with open(os.path.join(HERE, 'requirement-setuptools.txt')) as f:
-        setuptools_requirement = f.read().strip()
-min_setuptools_version = parse_version(setuptools_requirement.split('==')[1])
-if parse_version(setuptools_version) < min_setuptools_version:
-    raise AssertionError(
-        'setuptools version error\n'
-        'You need a newer version of setuptools.\n'
-        'Install the recommended version:\n'
-        '    pip install -r requirement-setuptools.txt\n'
-        'and then try again to install ckan into your python environment.'
-    )
+MIN_SETUPTOOLS_VERSION = 20.4
+assert setuptools_version >= str(MIN_SETUPTOOLS_VERSION) and \
+    int(setuptools_version.split('.')[0]) >= int(MIN_SETUPTOOLS_VERSION),\
+    ('setuptools version error'
+     '\nYou need a newer version of setuptools.\n'
+     'You have {current}, you need at least {minimum}'
+     '\nInstall the recommended version:\n'
+     '    pip install -r requirement-setuptools.txt\n'
+     'and then try again to install ckan into your python environment.'.format(
+         current=setuptools_version,
+         minimum=MIN_SETUPTOOLS_VERSION
+         ))
 
 
 entry_points = {
@@ -220,13 +210,13 @@ setup(
     namespace_packages=['ckanext', 'ckanext.stats'],
     message_extractors={
         'ckan': [
-            ('**.py', 'python', None),
-            ('**.js', 'javascript', None),
             ('templates/importer/**', 'ignore', None),
             ('templates/**.html', 'ckan', None),
             ('templates/**.txt', 'ckan', None),
             ('templates_legacy/**.html', 'ckan', None),
-            ('public/**', 'ignore', None),
+            ('public/base/test/**', 'ignore', None),
+            ('**.py', 'python', None),
+            ('**.js', 'javascript', None),
         ],
         'ckanext': [
             ('**.py', 'python', None),
@@ -244,7 +234,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 2 :: Only'
         'Programming Language :: Python :: 2.7',
     ],
 )

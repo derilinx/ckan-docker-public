@@ -102,8 +102,7 @@ class DatasetActivitySessionExtension(SessionExtension):
                     # Object has no id; skipping
                     continue
 
-                if (activity_type in ('new', 'changed') and
-                        obj.id in activities):
+                if activity_type == "new" and obj.id in activities:
                     # This object was already logged as a new package
                     continue
 

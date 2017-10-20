@@ -502,12 +502,14 @@ left arrow <
 
     @classmethod
     def _create_user_without_commit(cls, name='', **user_dict):
-        if model.User.by_name(name):
+        if model.User.by_name(name) or \
+                (user_dict.get('open_id') and
+                 model.User.by_openid(user_dict.get('openid'))):
             log.warning('Cannot create user "%s" as it already exists.' %
                         name or user_dict['name'])
             return
         # User objects are not revisioned so no need to create a revision
-        user_ref = name
+        user_ref = name or user_dict['openid']
         assert user_ref
         for k, v in user_dict.items():
             if v:

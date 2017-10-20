@@ -355,7 +355,7 @@ class BaseModelApiTestCase(ApiTestCase, ControllerTestCase):
         'description' : u'Great group!',
         'packages' : [u'annakarenina', u'warandpeace'],
     }
-    user_name = u'myrandom'
+    user_name = u'http://myrandom.openidservice.org/'
 
     def setup(self):
         super(BaseModelApiTestCase, self).setup()

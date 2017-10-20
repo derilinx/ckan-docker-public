@@ -1,26 +1,28 @@
 # encoding: utf-8
 
-from ckan.tests.helpers import _get_test_app
+import paste.fixture
 from ckan.common import config
 
 import ckan.model as model
+import ckan.tests.legacy as tests
 import ckan.plugins as p
 import ckan.lib.helpers as h
 import ckanext.reclineview.plugin as plugin
 import ckan.lib.create_test_data as create_test_data
+import ckan.config.middleware as middleware
 
 from ckan.tests import helpers, factories
 
 
-class BaseTestReclineViewBase():
+class BaseTestReclineViewBase(tests.WsgiAppCase):
     @classmethod
     def setup_class(cls):
         cls.config_templates = config['ckan.legacy_templates']
         config['ckan.legacy_templates'] = 'false'
-
-        cls.app = _get_test_app()
+        wsgiapp = middleware.make_app(config['global_conf'], **config)
         p.load(cls.view_type)
 
+        cls.app = paste.fixture.TestApp(wsgiapp)
         cls.p = cls.view_class()
 
         create_test_data.CreateTestData.create()
@@ -84,7 +86,6 @@ class TestReclineViewDatastoreOnly(helpers.FunctionalTestBase):
 
     @classmethod
     def setup_class(cls):
-        cls.app = _get_test_app()
         if not p.plugin_loaded('recline_view'):
             p.load('recline_view')
         if not p.plugin_loaded('datastore'):
@@ -93,6 +94,8 @@ class TestReclineViewDatastoreOnly(helpers.FunctionalTestBase):
         app_config['ckan.legacy_templates'] = 'false'
         app_config['ckan.plugins'] = 'recline_view datastore'
         app_config['ckan.views.default_views'] = 'recline_view'
+        wsgiapp = middleware.make_app(config['global_conf'], **app_config)
+        cls.app = paste.fixture.TestApp(wsgiapp)
 
     @classmethod
     def teardown_class(cls):

@@ -7,7 +7,6 @@ import datetime
 import time
 import json
 import mimetypes
-import os
 
 from ckan.common import config
 import paste.deploy.converters as converters
@@ -632,7 +631,7 @@ def user_update(context, data_dict):
     '''Update a user account.
 
     Normal users can only update their own user accounts. Sysadmins can update
-    any user account. Can not modify exisiting user's name.
+    any user account.
 
     For further parameters see
     :py:func:`~ckan.logic.action.create.user_create`.
@@ -1274,11 +1273,8 @@ def config_option_update(context, data_dict):
     for key, value in data.iteritems():
 
         # Set full Logo url
-        if key == 'ckan.site_logo' and value and not value.startswith('http')\
-                and not value.startswith('/'):
-            image_path = 'uploads/admin/'
-
-            value = h.url_for_static('{0}{1}'.format(image_path, value))
+        if key =='ckan.site_logo' and value and not value.startswith('http'):
+            value = h.url_for_static('uploads/admin/{0}'.format(value))
 
         # Save value in database
         model.set_system_info(key, value)

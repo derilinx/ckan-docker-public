@@ -54,7 +54,7 @@ describe('jQuery.fn.slugPreview()', function () {
   it('should show the original element when Edit is clicked', function () {
     var target = this.element.slugPreview();
     target.find('button').click();
-    assert.ok(this.element.css('display') === '');
+    assert.ok(this.element.css('display') === 'block');
   });
 
   it('should hide the preview element when Edit is clicked', function () {

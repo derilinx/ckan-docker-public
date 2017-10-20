@@ -411,12 +411,11 @@ class FeedController(base.BaseController):
                 author_email=pkg.get('author_email', ''),
                 categories=[t['name'] for t in pkg.get('tags', [])],
                 enclosure=webhelpers.feedgenerator.Enclosure(
-                    h.url_for(controller='api',
-                              register='package',
-                              action='show',
-                              id=pkg['name'],
-                              ver='3',
-                              qualified=True),
+                    self.base_url + h.url_for(controller='api',
+                                              register='package',
+                                              action='show',
+                                              id=pkg['name'],
+                                              ver='2'),
                     unicode(len(json.dumps(pkg))),   # TODO fix this
                     u'application/json'),
                 **additional_fields

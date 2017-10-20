@@ -529,12 +529,8 @@ class UserController(base.BaseController):
         if request.method == 'POST':
             try:
                 context['reset_password'] = True
-                user_state = user_dict['state']
                 new_password = self._get_form_password()
                 user_dict['password'] = new_password
-                username = request.params.get('name')
-                if (username is not None and username != ''):
-                    user_dict['name'] = username
                 user_dict['reset_key'] = c.reset_key
                 user_dict['state'] = model.State.ACTIVE
                 user = get_action('user_update')(context, user_dict)
@@ -552,7 +548,6 @@ class UserController(base.BaseController):
                 h.flash_error(u'%r' % e.error_dict)
             except ValueError, ve:
                 h.flash_error(unicode(ve))
-            user_dict['state'] = user_state
 
         c.user_dict = user_dict
         return render('user/perform_reset.html')

@@ -1,11 +1,5 @@
 {% extends "user/read_base.html" %}
 
-{% block page_primary_action %}
-  {% if h.check_access('package_create') and user.datasets %}
-    {% snippet 'snippets/add_dataset.html' %}
-  {% endif %}
-{% endblock %}
-
 {% block primary_content_inner %}
   <h2 class="hide-heading">
     {% block page_heading %}{{ _('Datasets') }}{% endblock %}
