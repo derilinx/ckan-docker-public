@@ -22,3 +22,4 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "sche
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.search.show_all_types = record"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "search.facets.limit = 500"
