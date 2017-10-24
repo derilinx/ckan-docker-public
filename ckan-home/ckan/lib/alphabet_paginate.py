@@ -94,8 +94,8 @@ class AlphaPage(object):
             attributes = {'class_': li_class} if li_class else {}
             page_element = HTML.li(link, **attributes)
             pages.append(page_element)
-        ul = HTML.tag('ul', *pages)
-        div = HTML.div(ul, class_='pagination pagination-alphabet')
+        ul = HTML.tag('ul', class_='pagination', *pages)
+        div = HTML.div(ul, class_='pagination-wrapper')
         return div
 
 
