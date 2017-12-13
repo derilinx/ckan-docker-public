@@ -4,9 +4,9 @@
 
 {{ _('Here is a summary of changes in datasets, organizations and groups:') }}
 {% for activity in activities %}{% if activity.activity_type == "new package" %} 
-    * A new dataset, "{{ activity.data.package.title }}" was added{% if activity.data.package.owner_org %}{% set org = h.get_organization(org=activity.data.package.owner_org) %} to the {{ org.title }} organization{% endif %}: {{ h.url_for(controller='package', action='read', id='activity.data.package.id', qualified=True) }} {# TODO: Also support groups #}
+    * A new dataset, "{{ activity.data.package.title }}" was added{% if activity.data.package.owner_org %}{% set org = h.get_organization(org=activity.data.package.owner_org) %} to the {{ org.title }} organization{% endif %}: {{ h.url_for(controller='package', action='read', id=activity.data.package.id, qualified=True) }} {# TODO: Also support groups #}
   {% elif activity.activity_type == "changed package" %}
-    * The dataset "{{ activity.data.package.title }}" was changed: {{ h.url_for(controller='package', action='read', id='activity.data.package.id', qualified=True) }}
+    * The dataset "{{ activity.data.package.title }}" was changed: {{ h.url_for(controller='package', action='read', id=activity.data.package.id, qualified=True) }}
   {% elif activity.activity_type == "deleted package" %}
     * The dataset "{{ activity.data.package.title }}" was deleted
 {% endif %}{% endfor %}
