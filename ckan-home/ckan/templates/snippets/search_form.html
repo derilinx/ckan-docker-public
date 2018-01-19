@@ -22,11 +22,31 @@
     </div>
   {% endblock %}
 
+  {# Get a few other bits of info along with the search string so we can really perform the same search #}
+  {% set organization = "0" %}
+  {% set group = "0" %}
+  {% set package_type = "0" %}
+  {% if c.controller == "organization" %}
+    {% set organization = c.group.id %}
+  {% elif c.controller == "group" %}
+    {# Searches require group name and not ID #}
+    {% set group = c.group.name %}
+  {% elif type %}
+    {# Only set on package controller searches (i.e. not org/group) #}
+    {% set package_type = type %}
+  {% endif %}
   {% block search_search_fields %}
     {% if fields -%}
       <span>{{ form.hidden_from_list(fields=fields) }}</span>
     {%- endif %}
   {% endblock %}
+
+
+  {% if c.search_url_params != "" %}
+  <div class="follow_button control-order-by">
+    {{ h.follow_button('search', c.search_url_params + "&_search_organization=" + organization + "&_search_group=" + group + "&_search_package_type=" + package_type) }}
+  </div>
+  {% endif %}
 
   {% block search_sortby %}
     {% if sorting %}

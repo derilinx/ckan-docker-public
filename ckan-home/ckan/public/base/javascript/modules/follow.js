@@ -38,6 +38,7 @@ this.ckan.module('follow', function($) {
 		 */
 		_onClick: function(event) {
 			var options = this.options;
+                        console.log(options);
 			if (
 				options.action
 				&& options.type

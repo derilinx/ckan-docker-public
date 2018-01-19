@@ -28,6 +28,7 @@ from markdown import markdown
 from bleach import clean as clean_html, ALLOWED_TAGS, ALLOWED_ATTRIBUTES
 from pylons import url as _pylons_default_url
 from ckan.common import config, is_flask_request
+from paste.deploy.converters import asbool
 from flask import redirect as _flask_redirect
 from routes import redirect_to as _routes_redirect_to
 from routes import url_for as _routes_default_url_for
@@ -1503,7 +1504,7 @@ def convert_to_dict(object_type, objs):
 
 
 # these are the types of objects that can be followed
-_follow_objects = ['dataset', 'user', 'group']
+_follow_objects = ['dataset', 'user', 'group', 'search']
 
 
 @core_helper
@@ -1528,8 +1529,10 @@ def follow_button(obj_type, obj_id):
     # If the user is logged in show the follow/unfollow button
     if c.user:
         context = {'model': model, 'session': model.Session, 'user': c.user}
-        action = 'am_following_%s' % obj_type
-        following = logic.get_action(action)(context, {'id': obj_id})
+        following = False
+        if obj_type != 'search':
+            action = 'am_following_%s' % obj_type
+            following = logic.get_action(action)(context, {'id': obj_id})
         return snippet('snippets/follow_button.html',
                        following=following,
                        obj_id=obj_id,
@@ -2411,3 +2414,27 @@ def sanitize_id(id_):
     ValueError.
     '''
     return str(uuid.UUID(id_))
+
+@core_helper
+def type_is_search_all(package_type):
+    '''Given a package type, ascertains based on config options whether
+    searching should happen across all package types for this type or not
+    '''
+    # Unless changed via config options, don't search other dataset
+    # types. Potential alternatives are to show them for a general search
+    # (dataset type) or for one other specified type
+    search_all_type = config.get('ckan.search.show_all_types', 'dataset')
+    search_all = False
+
+    try:
+        # If the "type" is set to True or False, convert to bool
+        # and we know that no type was specified, so use traditional
+        # behaviour of applying this only to dataset type
+        search_all = asbool(search_all_type)
+        search_all_type = 'dataset'
+    # Otherwise we treat as a string representing a type
+    except ValueError:
+        search_all = True
+
+    return (search_all and package_type == search_all_type)
+        

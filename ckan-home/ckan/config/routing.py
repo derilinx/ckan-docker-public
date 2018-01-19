@@ -232,9 +232,11 @@ def make_map():
                       'read_ajax',
                       'history_ajax',
                       'follow',
+                      'follow_search',
                       'activity',
                       'groups',
                       'unfollow',
+                      'unfollow_search',
                       'delete',
                       'api_data',
                   ])))

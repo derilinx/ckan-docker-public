@@ -162,8 +162,7 @@ class PackageController(base.BaseController):
 
         def remove_field(key, value=None, replace=None):
             return h.remove_url_param(key, value=value, replace=replace,
-                                      controller='package', action='search',
-                                      alternative_url=package_type)
+                                      controller='package', action='search')
 
         c.remove_field = remove_field
 
@@ -225,24 +224,12 @@ class PackageController(base.BaseController):
                        'user': c.user, 'for_view': True,
                        'auth_user_obj': c.userobj}
 
-            # Unless changed via config options, don't show other dataset
-            # types any search page. Potential alternatives are do show them
-            # on the default search page (dataset) or on one other search page
-            search_all_type = config.get('ckan.search.show_all_types', 'false')
-            search_all = False
-
-            try:
-                # If the "type" is set to True or False, convert to bool
-                search_all = asbool(search_all_type)
-            # Otherwise we treat as a string representing a type
-            except ValueError:
-                if package_type and package_type == search_all_type:
-                    search_all = True
- 
             if not package_type:
                 package_type = 'dataset'
 
-            if not search_all:
+            type_is_search_all = h.type_is_search_all(package_type)
+
+            if not type_is_search_all:
                 # Only show datasets of this particular type
                 fq += ' +dataset_type:{type}'.format(type=package_type)
 
@@ -1233,6 +1220,24 @@ class PackageController(base.BaseController):
 
         return render('package/followers.html',
                       {'dataset_type': dataset_type})
+
+    def follow_search(self, search_string):
+        '''Start following these search results.'''
+        context = {'model': model,
+                   'session': model.Session,
+                   'user': c.user}
+        data_dict = {'search_string': search_string}
+        #try:
+        #TODO get_action('follow_search')(context, data_dict)
+        #TODO show summary of search?
+        h.flash_success(_("You are now following this search"))
+        #except ValidationError as e:
+        #    error_message = (e.message or e.error_summary
+        #                     or e.error_dict)
+        #    h.flash_error(error_message)
+        #except NotAuthorized as e:
+        #    h.flash_error(e.message)
+        h.redirect_to(controller='user', action='activity', id=c.user.id)
 
     def groups(self, id):
         context = {'model': model, 'session': model.Session,

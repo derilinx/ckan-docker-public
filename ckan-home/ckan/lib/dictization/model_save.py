@@ -601,6 +601,20 @@ def follower_dict_save(data_dict, context, FollowerClass):
     session.add(follower_obj)
     return follower_obj
 
+def saved_search_dict_save(data_dict, context):
+    model = context['model']
+    session = context['session']
+    id = data_dict.get('id')
+    if id:
+        obj = session.query(model.SavedSearch).get(id)
+        obj.last_run=data_dict.get('last_run', None)
+        obj.last_results=data_dict.get('last_results', [])
+        return 'model'
+    else:
+        obj = model.SavedSearch(user_id=data_dict['user_id'], search_string=data_dict['search_string'])
+
+    session.add(obj)
+    return obj
 
 def resource_view_dict_save(data_dict, context):
     model = context['model']

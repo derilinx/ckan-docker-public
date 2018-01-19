@@ -1033,8 +1033,7 @@ def send_email_notifications(context, data_dict):
         raise ValidationError('ckan.activity_streams_email_notifications'
                               ' is not enabled in config')
 
-    email_notifications.get_and_send_notifications_for_all_users()
-
+    return email_notifications.get_and_send_notifications_for_all_users()
 
 def package_owner_org_update(context, data_dict):
     '''Update the owning organization of a dataset

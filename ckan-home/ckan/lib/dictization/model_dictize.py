@@ -120,6 +120,24 @@ def resource_dictize(res, context):
     return resource
 
 
+def saved_search_list_dictize(search_list, context):
+
+    result_list = []
+    for search in search_list:
+        search_dict = saved_search_dictize(search, context)
+
+        result_list.append(search_dict)
+
+    return sorted(result_list, key=lambda x: x["timestamp"])
+
+
+def saved_search_dictize(search, context):
+    model = context['model']
+    search = d.table_dictize(search, context)
+    
+    return search
+
+
 def _execute(q, table, context):
     '''
     Takes an SqlAlchemy query (q) that is (at its base) a Select on an
@@ -748,6 +766,10 @@ def user_following_dataset_dictize(follower, context):
 
 def user_following_group_dictize(follower, context):
     return d.table_dictize(follower, context)
+
+def user_following_search_dictize(search_string, follower, context):
+    #TODO - take from DB
+    return {"follower_id": follower, "search_string": search_string}
 
 def resource_view_dictize(resource_view, context):
     dictized = d.table_dictize(resource_view, context)
