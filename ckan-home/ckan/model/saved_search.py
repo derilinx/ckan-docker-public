@@ -25,14 +25,13 @@ __all__ = ['SavedSearch', 'saved_search_table']
 
 class SavedSearch(domain_object.DomainObject):
 
-    def __init__(self, user_id, search_string, id = None, last_results = [], last_run = None):
-        if id is None:
-            self.id = _types.make_uuid()
+    def __init__(self, user_id, search_string):
+        self.id = _types.make_uuid()
         self.timestamp = datetime.datetime.utcnow()
         self.user_id = user_id
-        self.last_run = last_run
+        self.last_run = None
         self.search_string = search_string
-        self.last_results = last_results
+        self.last_results = []
 
 saved_search_table = Table(
     'saved_search', meta.metadata,
