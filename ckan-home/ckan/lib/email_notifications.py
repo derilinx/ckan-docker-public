@@ -9,6 +9,7 @@ users.
 import datetime
 import re
 import logging
+import urllib2
 
 import ckan.model as model
 import ckan.logic as logic
@@ -156,15 +157,10 @@ def _make_parameters(query_string):
     for part in parts:
         s = part.split("=")
         if len(s) > 1:
-            res.append((s[0], s[1]))
+            res.append((s[0], urllib2.unquote(s[1].replace("+", " "))))
     return res
 
 def _notifications_from_saved_searches(user_dict, since):
-    def make_url(parts):
-        #Get rid of last & - but there really should always be at least one param... so not necessary
-        if len(parts['end']) > 0:
-            parts['end'] = parts['end'][0:len(parts['end'])-1]
-        return parts['base'] + "?" + parts['end']
     # Note we ignore "since" here as we aren't going to
     # look at when the search changed
     context = {'model': model, 'session': model.Session,
@@ -175,18 +171,16 @@ def _notifications_from_saved_searches(user_dict, since):
     search_list = model_dictize.saved_search_list_dictize(_search_list, context)
     activity_list = []
     for search in search_list:
-        #save link to search (needed for activity later)
-        try:
+        # Here we also build a link to search (needed for email later)
+        # FIXME: Put this into a function so that the listing of searches can also do it
+        if True:
             if True:
                 fq = ''
                 q = ''
                 search_extras = {}
-                reconstruct_search = {}
-                reconstruct_search['end'] = ""
                 for (param, value) in _make_parameters(search['search_string'].replace("?","")):
                     if param not in ['q', 'page', 'sort'] \
                             and len(value) and not param.startswith('_'):
-                        reconstruct_search['end'] += param + "=" + value + "&" 
                         if not param.startswith('ext_'):
                             if param == "organization":
                                 param = "owner_org"
@@ -197,19 +191,16 @@ def _notifications_from_saved_searches(user_dict, since):
                         q = value
                     elif param == '_search_organization' and value != '0':
                         fq += ' owner_org:%s' % (value)
-                        reconstruct_search['base'] = h.url_for(controller='organization', action='read', id=value, qualified=True)
                     elif param == '_search_group' and value != '0':
                         fq += ' groups:%s' % (value)
-                        reconstruct_search['base'] = h.url_for(controller='group', action='read', id=value, qualified=True)
                     elif param == '_search_package_type' and value != '0':
                         package_type = value
                         type_is_search_all = h.type_is_search_all(package_type)
-                        reconstruct_search['base'] = h.url_for(controller='package', action='search', package_type=value, qualified=True)
 
                         if not type_is_search_all:
                         # Only show datasets of this particular type
                             fq += ' +dataset_type:{type}'.format(type=package_type)
-                
+
                 data_dict = {
                     'q': q,
                     'fq': fq.strip(),
@@ -226,17 +217,18 @@ def _notifications_from_saved_searches(user_dict, since):
                 if search['last_run']:
                     last_ids = search['last_results']
                     last_ids = set(last_ids)
-                    difference = len(ids - last_ids);
+                    difference = len(ids - last_ids)
+                    # If there's a difference in result lists
                     if difference > 0: 
-                        activity = {'data': {'search_url': make_url(reconstruct_search), 'activity_type': 'search_results_changed'}}
+                        activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_changed'}}
                         activity_list.append(activity)
                     else:
-                        # For each result, ceheck if metmod more than last run, then break zes
+                        # If any result updated
                         resultchange = False
                         for result in query['results']:
                             fmt = '%Y-%m-%dT%H:%M:%S.%f'
                             if datetime.datetime.strptime(result['metadata_modified'], fmt) >  datetime.datetime.strptime(search['last_run'], fmt):
-                                activity = {'data': {'search_url': make_url(reconstruct_search), 'activity_type': 'search_results_updated'}}
+                                activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_updated'}}
                                 activity_list.append(activity)
                                 break
             
@@ -248,16 +240,14 @@ def _notifications_from_saved_searches(user_dict, since):
                 if not context.get('defer_commit'):
                     model.repo.commit()
             
-        except SearchQueryError, se:
-            # FIXME: Ideally, tell user about this so they can delete/edit
-            log.error('Dataset search query rejected: %r', se.args)
-        except SearchError, se:
-            # FIXME: Ideally, tell user about this so they can delete/edit/inform admin
-            log.error('Dataset search error: %r', se.args) 
+        #except SearchQueryError, se:
+        #    # FIXME: Ideally, tell user about this so they can delete/edit
+        #    log.error('Dataset search query rejected: %r', se.args)
+        #except SearchError, se:
+        #    # FIXME: Ideally, tell user about this so they can delete/edit/inform admin
+        #    log.error('Dataset search error: %r', se.args) 
 
     return _notifications_for_saved_searches(activity_list, user_dict)
-    #TODO Make results look like activities
-    #TODO undo return stuff everywhere
 
 def _notifications_from_dashboard_activity_list(user_dict, since):
     '''Return any email notifications from the given user's dashboard activity
@@ -281,8 +271,6 @@ def _notifications_from_dashboard_activity_list(user_dict, since):
             if strptime(activity['timestamp'], fmt) > since]
 
     return _notifications_for_activities(activity_list, user_dict)
-
-
 
 
 # A list of functions that provide email notifications for users from different

@@ -1,0 +1,26 @@
+{% extends "user/read.html" %}
+
+{% block subtitle %}{{ _('Saved Searches') }} - {{ super() }}{% endblock %}
+
+{% block primary_content_inner %}
+  <h2 class="hide-heading">{% block page_heading %}{{ _('Saved Searches') }}{% endblock %}</h2>
+  <ul class="activity">
+  {% for search in c.searches %}
+    <li class="item new-package" id="{{ search.id }}">
+      <i class="fa icon fa-search"></i>
+      <div class="actor">
+      <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow">&nbsp;<i class="fa fa-trash"></i></a>
+      </div>
+      <p>&nbsp;
+      <a href="{{ search.search_url_in_ckan }}">{{ search.search_url_in_ckan | truncate(75) }}</a>
+        <span class="date">
+          {% if search.last_run %}
+            {{ search.last_results | count }} {{ _('result(s)') }}
+          {% else %}
+            {{ _('Not yet run') }}
+          {% endif %}
+        </span>
+      </p>
+    </li>
+  {% endfor %}
+{% endblock %}

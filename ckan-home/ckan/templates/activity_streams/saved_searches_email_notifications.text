@@ -1,4 +1,4 @@
-{% set num = activities|length %}{{num}} of your saved searches have new or different content at {{g.site_title}}
+{{ _('{num} of your saved searches have new or different content at {site_title}').format(site_title=g.site_title, num=(activities | count)) }}
 
 {{ _('The following search results have changed:') }}
 {% for activity in activities %}

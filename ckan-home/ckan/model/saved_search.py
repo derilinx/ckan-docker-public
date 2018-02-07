@@ -45,6 +45,14 @@ saved_search_table = Table(
 
 meta.mapper(SavedSearch, saved_search_table)
 
+def _make_parameters(query_string):
+    parts = query_string.split("&")
+    res = {}
+    for part in parts:
+        s = part.split("=")
+        if len(s) > 1:
+            res[s[0]] = s[1]
+    return res
 
 def user_saved_searches_list(user_id):
     '''Return an SQLAlchemy query for all saved searches from user_id.'''
@@ -53,3 +61,20 @@ def user_saved_searches_list(user_id):
     q = q.filter(model.SavedSearch.user_id == user_id)
 
     return q
+
+def saved_search_is_duplicate(user_id, search_string):
+    '''Test whether an equivalent search already exists'''
+    saved_searches = user_saved_searches_list(user_id)
+    
+    # We've already been careful to put all relevant info about the base url into
+    # saved parameters for the call that saves the search, so we can safely only
+    # compare the arguments (and not whether we searching org/grop etc. according
+    # to base URL
+    n_s_search = _make_parameters(search_string)
+    
+    for d_s_search in saved_searches:
+        #ts += "\n" + str(n_s_search) + " : " + str(d_s_search
+        if _make_parameters(d_s_search.search_string) == n_s_search:
+            return True
+
+    return False

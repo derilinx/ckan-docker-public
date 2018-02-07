@@ -1504,17 +1504,19 @@ def convert_to_dict(object_type, objs):
 
 
 # these are the types of objects that can be followed
-_follow_objects = ['dataset', 'user', 'group', 'search']
+_follow_objects = ['dataset', 'user', 'group', 'search', 'disabled']
 
 
 @core_helper
-def follow_button(obj_type, obj_id):
+def follow_button(obj_type, obj_id, reason=""):
     '''Return a follow button for the given object type and id.
 
     If the user is not logged in return an empty string instead.
 
     :param obj_type: the type of the object to be followed when the follow
-        button is clicked, e.g. 'user' or 'dataset'
+        button is clicked, e.g. 'user' or 'dataset'; setting to 'disabled'
+        will show the button in disabled state and use the "reason" parameter
+        as a title
     :type obj_type: string
     :param obj_id: the id of the object to be followed when the follow button
         is clicked
@@ -1525,18 +1527,28 @@ def follow_button(obj_type, obj_id):
 
     '''
     obj_type = obj_type.lower()
+    disabled = False
     assert obj_type in _follow_objects
     # If the user is logged in show the follow/unfollow button
     if c.user:
         context = {'model': model, 'session': model.Session, 'user': c.user}
+        title = None
         following = False
-        if obj_type != 'search':
+        if obj_type not in ['search', 'disabled']:
             action = 'am_following_%s' % obj_type
             following = logic.get_action(action)(context, {'id': obj_id})
+        elif obj_type == 'disabled':
+            disabled = True
+            title = reason
+        else:
+            title = _('Click here to have changes in the results emailed to '
+                    'you (email alerts must be enabled in your user settings)')
         return snippet('snippets/follow_button.html',
                        following=following,
+                       disabled=disabled,
                        obj_id=obj_id,
-                       obj_type=obj_type)
+                       obj_type=obj_type,
+                       title=title)
     return ''
 
 
@@ -2415,6 +2427,7 @@ def sanitize_id(id_):
     '''
     return str(uuid.UUID(id_))
 
+
 @core_helper
 def type_is_search_all(package_type):
     '''Given a package type, ascertains based on config options whether
@@ -2437,4 +2450,10 @@ def type_is_search_all(package_type):
         search_all = True
 
     return (search_all and package_type == search_all_type)
-        
+
+
+@core_helper
+def follow_searches_available():
+    '''Returns based on config options whether following searches is allowed
+    '''
+    return asbool(config.get('ckan.follow_searches_enabled', 'false'))

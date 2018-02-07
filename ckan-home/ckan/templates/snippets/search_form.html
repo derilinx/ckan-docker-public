@@ -42,9 +42,13 @@
   {% endblock %}
 
 
-  {% if c.search_url_params != "" %}
+  {% if h.follow_searches_available() and c.search_url_params != "" and not (c.search_url_params.count('&') == 0 and c.search_url_params[0] == "_") %}
   <div class="follow_button control-order-by">
-    {{ h.follow_button('search', c.search_url_params + "&_search_organization=" + organization + "&_search_group=" + group + "&_search_package_type=" + package_type) }}
+    {% if count <= 500 %}
+        {{ h.follow_button('search', c.search_url_params + "&_search_organization=" + organization + "&_search_group=" + group + "&_search_package_type=" + package_type) }}
+    {% else %}
+        {{ h.follow_button('disabled', False, reason=_("Following searches with more than 500 results is not supported")) }}
+    {% endif %}
   </div>
   {% endif %}
 

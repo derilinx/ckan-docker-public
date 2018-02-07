@@ -122,9 +122,38 @@ def resource_dictize(res, context):
 
 def saved_search_list_dictize(search_list, context):
 
+    def _make_parameters(query_string):
+        parts = query_string.split("&")
+        res = []
+        for part in parts:
+            s = part.split("=")
+            if len(s) > 1:
+                res.append((s[0], s[1]))
+        return res
+
     result_list = []
     for search in search_list:
         search_dict = saved_search_dictize(search, context)
+
+        reconstruct_search = {}
+        reconstruct_search['base'] = h.url_for(controller='package', action='search')
+        reconstruct_search['end'] = ""
+        for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
+            if param not in ['q', 'page', 'sort'] \
+                    and len(value) and not param.startswith('_'):
+                reconstruct_search['end'] += param + "=" + value + "&"
+            elif param == '_search_organization' and value != '0':
+                reconstruct_search['base'] = h.url_for(controller='organization', action='read', id=value)
+            elif param == '_search_group' and value != '0':
+                reconstruct_search['base'] = h.url_for(controller='group', action='read', id=value)
+            elif param == '_search_package_type' and value != '0':
+                package_type = value
+                reconstruct_search['base'] = h.url_for(controller='package', action='search').replace('/dataset', '/' + package_type)
+
+        if len(reconstruct_search['end']) > 0:
+            reconstruct_search['end'] = reconstruct_search['end'][0:len(reconstruct_search['end'])-1]
+
+        search_dict['search_url_in_ckan'] = reconstruct_search['base'] + "?" + reconstruct_search['end'] 
 
         result_list.append(search_dict)
 
@@ -766,10 +795,6 @@ def user_following_dataset_dictize(follower, context):
 
 def user_following_group_dictize(follower, context):
     return d.table_dictize(follower, context)
-
-def user_following_search_dictize(search_string, follower, context):
-    #TODO - take from DB
-    return {"follower_id": follower, "search_string": search_string}
 
 def resource_view_dictize(resource_view, context):
     dictized = d.table_dictize(resource_view, context)

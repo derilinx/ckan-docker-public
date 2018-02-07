@@ -162,9 +162,8 @@ class PackageController(base.BaseController):
 
         def remove_field(key, value=None, replace=None):
             return h.remove_url_param(key, value=value, replace=replace,
-                                      controller='package', action='search',
-                                      alternative_url=package_type)
-                                      
+                                      controller='package', action='search')
+
         c.remove_field = remove_field
 
         sort_by = request.params.get('sort', None)
@@ -1221,24 +1220,6 @@ class PackageController(base.BaseController):
 
         return render('package/followers.html',
                       {'dataset_type': dataset_type})
-
-    def follow_search(self, search_string):
-        '''Start following these search results.'''
-        context = {'model': model,
-                   'session': model.Session,
-                   'user': c.user}
-        data_dict = {'search_string': search_string}
-        #try:
-        #TODO get_action('follow_search')(context, data_dict)
-        #TODO show summary of search?
-        h.flash_success(_("You are now following this search"))
-        #except ValidationError as e:
-        #    error_message = (e.message or e.error_summary
-        #                     or e.error_dict)
-        #    h.flash_error(error_message)
-        #except NotAuthorized as e:
-        #    h.flash_error(e.message)
-        h.redirect_to(controller='user', action='activity', id=c.user.id)
 
     def groups(self, id):
         context = {'model': model, 'session': model.Session,

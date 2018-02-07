@@ -601,6 +601,26 @@ class UserController(base.BaseController):
 
         return render('user/activity_stream.html')
 
+    def saved_search(self, id, offset=0):
+        '''Render this user's saved_searches.'''
+
+        context = {'model': model, 'session': model.Session,
+                   'user': c.user, 'auth_user_obj': c.userobj,
+                   'for_view': True}
+        data_dict = {'id': id, 'user_obj': c.userobj,
+                     'include_num_followers': True}
+        try:
+            check_access('user_show', context, data_dict)
+        except NotAuthorized:
+            abort(403, _('Not authorized to see this page'))
+
+        self._setup_template_variables(context, data_dict)
+
+        c.searches = get_action('user_saved_search_list')(
+                context, {'id': c.user_dict['id']})
+
+        return render('user/saved_search.html')
+
     def _get_dashboard_context(self, filter_type=None, filter_id=None, q=None):
         '''Return a dict needed by the dashboard view to determine context.'''
 
