@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+#$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = vectorstorer stats text_view image_view recline_graph_view webpage_view datastore datapusher spatial_metadata spatial_query dcat dcat_json_interface pages officedocs_view pdf_view geo_view geojson_view wmts_view dietstars resource_proxy cesium_viewer issues fluent scheming_datasets odm_laws odm_library odm_dataset odm_nav odm_migration datatables_view"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = vectorstorer stats text_view image_view recline_graph_view webpage_view datastore datapusher spatial_metadata spatial_query dcat dcat_json_interface pages officedocs_view pdf_view geo_view geojson_view wmts_view dietstars resource_proxy cesium_viewer issues fluent scheming_datasets datatables_view landesa"
+
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = pdf_view officedocs_view cesium_view datatables_view"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.pages.editor = ckeditor"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.geoview.ol_viewer.formats = wms wfs gml kml arcgis_rest"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.geoserver_url = http://172.104.153.179/geoserver"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.geoserver_workspace = odm"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.geoserver_admin = admin"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.geoserver_password = zUf4BsvK3b77HNrD"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.geoserver_ckan_datastore = ckan_datastore_default"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext-vectorstorer.gdal_folder = /usr/lib/python2.7/dist-packages"

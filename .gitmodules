@@ -1,0 +1,7 @@
+[submodule "extensions/ckanext-dietstars"]
+	path = extensions/ckanext-dietstars
+	url = https://github.com/derilinx/ckanext-dietstars.git
+
+[submodule "extensions/ckanext-landesa"]
+	path = extensions/ckanext-landesa
+	url = https://github.com/derilinx/ckanext-landesa.git
