@@ -270,6 +270,16 @@ def _notifications_from_dashboard_activity_list(user_dict, since):
     activity_list = [activity for activity in activity_list
             if strptime(activity['timestamp'], fmt) > since]
 
+    # Filter out duplicate activities:
+    id_set = set()
+    unfiltered_list = activity_list
+    activity_list = []
+    for activity in unfiltered_list:
+        if activity['object_id'] in id_set:
+            continue
+        activity_list.append(activity)
+        id_set.add(activity['object_id'])
+    
     return _notifications_for_activities(activity_list, user_dict)
 
 
