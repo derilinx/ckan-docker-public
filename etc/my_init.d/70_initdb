@@ -8,5 +8,6 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 psql $DATABASE_URL -c "drop extension postgis_tiger_geocoder" || echo "Command failed; probably not a problem";
 
+"$CKAN_HOME"/bin/paster --plugin=ckan db upgrade -c "${CKAN_CONFIG}/ckan.ini" || echo "Command failed; probably not a problem";
 "$CKAN_HOME"/bin/paster --plugin=ckan db init -c "${CKAN_CONFIG}/ckan.ini"
 "$CKAN_HOME"/bin/paster --plugin=ckan datastore set-permissions -c "${CKAN_CONFIG}/ckan.ini" | psql $DATASTORE_DB_URL

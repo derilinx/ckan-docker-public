@@ -1377,6 +1377,71 @@ def follow_dataset(context, data_dict):
     return model_dictize.user_following_dataset_dictize(follower, context)
 
 
+def follow_search(context, data_dict):
+    '''Start following a search.
+
+    You must provide your API key in the Authorization header.
+
+    :param id: the URL parameters-style search string to follow, e.g. ``'openness_score=3&res_format=PNG'``
+    :type id: string
+
+    :returns: a representation of the 'follower' relationship between yourself
+        and the search
+    :rtype: dictionary
+
+    '''
+
+    if 'user' not in context:
+        raise logic.NotAuthorized(
+            _("You must be logged in to follow a search."))
+
+    if not paste.deploy.converters.asbool(
+            config.get('ckan.follow_searches_enabled', 'false')):
+        raise logic.NotFound(
+            _("Following searches not supported"))
+
+    model = context['model']
+    session = context['session']
+
+    userobj = model.User.get(context['user'])
+    if not userobj:
+        raise logic.NotAuthorized(
+            _("You must be logged in to follow a search."))
+
+    follower = userobj.id
+
+    _current_search_list = model.saved_search.user_saved_searches_list(follower)
+    current_search_list = model_dictize.saved_search_list_dictize(_current_search_list, context)
+
+    if len(current_search_list) >= int(config.get('ckan.follow_searches_max_number', 20)):
+        errors = {"follower": [_("Maximum number of searches already reached")]}
+        raise ValidationError(errors)
+
+    # Allow id instead of search_string to maintain compatibility with
+    # general purpose Javascript module which usually works with object IDs
+    if not (data_dict.get('search_string') or data_dict.get('id')):
+        errors = {"search_string": [_("Not provided and id not found")], "id": [_("Not provided and search_string not found")]}
+        model.Session.rollback()
+        raise ValidationError(errors)
+
+    search_string = data_dict.get('search_string', data_dict.get('id'))
+    
+    if model.saved_search.saved_search_is_duplicate(follower, search_string):
+        errors = {"search_string": [_("This search is already being followed")]}
+        raise ValidationError(errors)
+
+    sent_data_dict = {"user_id": follower, "search_string": search_string}
+    model_save.saved_search_dict_save(sent_data_dict, context)
+
+    if not context.get('defer_commit'):
+        model.repo.commit()
+    
+    log.debug(_('User {follower} started following search "{search_string}"').format(
+        follower=follower, search_string=search_string))
+
+    return {"follower_id": follower, "search_string": search_string}
+
+
 def _group_or_org_member_create(context, data_dict, is_org=False):
     # creator of group/org becomes an admin
     # this needs to be after the repo.commit or else revisions break

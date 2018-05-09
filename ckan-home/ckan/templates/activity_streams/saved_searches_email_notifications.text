@@ -1,0 +1,10 @@
+{{ _('{num} of your saved searches have new or different content at {site_title}').format(site_title=g.site_title, num=(activities | count)) }}
+
+{{ _('The following search results have changed:') }}
+{% for activity in activities %}
+    {{ activity.data.search_url|safe }}
+{% endfor %}
+
+{{ _('You can turn off these email notifications in your {site_title} preferences. To change your preferences, click on this link:').format(site_title=g.site_title) }}
+
+{{ g.site_url + '/user/edit' }}

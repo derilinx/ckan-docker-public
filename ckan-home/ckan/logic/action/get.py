@@ -2530,6 +2530,30 @@ def user_activity_list(context, data_dict):
     return model_dictize.activity_list_dictize(activity_objects, context)
 
 
+def user_saved_search_list(context, data_dict):
+    '''Return a user's saved searches.
+
+    You must be authorized to view the user's profile.
+
+
+    :param id: the id or name of the user
+    :type id: string
+
+    :rtype: list of dictionaries
+
+    '''
+    _check_access('user_show', context, data_dict)
+
+    model = context['model']
+
+    user_ref = data_dict.get('id')  # May be user name or id.
+    user = model.User.get(user_ref)
+    if user is None:
+        raise logic.NotFound
+
+    _current_search_list = model.saved_search.user_saved_searches_list(user.id)
+    return model_dictize.saved_search_list_dictize(_current_search_list, context)
+
 @logic.validate(logic.schema.default_activity_list_schema)
 def package_activity_list(context, data_dict):
     '''Return a package's activity stream.

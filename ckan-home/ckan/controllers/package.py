@@ -162,8 +162,7 @@ class PackageController(base.BaseController):
 
         def remove_field(key, value=None, replace=None):
             return h.remove_url_param(key, value=value, replace=replace,
-                                      controller='package', action='search',
-                                      alternative_url=package_type)
+                                      controller='package', action='search')
 
         c.remove_field = remove_field
 
@@ -225,24 +224,12 @@ class PackageController(base.BaseController):
                        'user': c.user, 'for_view': True,
                        'auth_user_obj': c.userobj}
 
-            # Unless changed via config options, don't show other dataset
-            # types any search page. Potential alternatives are do show them
-            # on the default search page (dataset) or on one other search page
-            search_all_type = config.get('ckan.search.show_all_types', 'false')
-            search_all = False
-
-            try:
-                # If the "type" is set to True or False, convert to bool
-                search_all = asbool(search_all_type)
-            # Otherwise we treat as a string representing a type
-            except ValueError:
-                if package_type and package_type == search_all_type:
-                    search_all = True
- 
             if not package_type:
                 package_type = 'dataset'
 
-            if not search_all:
+            type_is_search_all = h.type_is_search_all(package_type)
+
+            if not type_is_search_all:
                 # Only show datasets of this particular type
                 fq += ' +dataset_type:{type}'.format(type=package_type)
 

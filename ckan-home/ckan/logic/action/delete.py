@@ -5,6 +5,7 @@
 import logging
 
 import sqlalchemy as sqla
+import paste.deploy.converters
 
 import ckan.lib.jobs as jobs
 import ckan.logic
@@ -13,8 +14,7 @@ import ckan.plugins as plugins
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckan import authz
 
-from ckan.common import _
-
+from ckan.common import _, config
 
 log = logging.getLogger('ckan.logic')
 
@@ -643,6 +643,50 @@ def unfollow_dataset(context, data_dict):
             ckan.logic.schema.default_follow_dataset_schema())
     _unfollow(context, data_dict, schema,
             context['model'].UserFollowingDataset)
+
+def unfollow_search(context, data_dict):
+    '''Stop following a search.
+
+    You must provide your API key in the Authorization header.
+
+    :param id: the id of the saved search
+    :type id: string
+
+    '''
+
+    if 'user' not in context:
+        raise logic.NotAuthorized(
+            _("You must be logged in to follow a search."))
+
+    if not paste.deploy.converters.asbool(
+            config.get('ckan.follow_searches_enabled', 'false')):
+        raise logic.NotFound(
+            _("Following searches not supported"))
+
+    model = context['model']
+    session = context['session']
+
+    userobj = model.User.get(context['user'])
+    if not userobj:
+        raise logic.NotAuthorized(
+            _("You must be logged in to unfollow a search."))
+
+    follower = userobj.id
+
+    if not data_dict.get('id'):
+        errors = {"id": [_("Not provided and search_string not found")]}
+        raise ValidationError(errors)
+
+    id = data_dict['id']
+
+    obj = session.query(model.SavedSearch).get(id)
+
+    if obj.user_id != follower:
+        raise NotFound(_('You are not following this search'))
+
+    obj.delete()
+
+    model.repo.commit()
 
 
 def _group_or_org_member_delete(context, data_dict=None):

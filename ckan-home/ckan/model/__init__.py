@@ -115,6 +115,9 @@ from follower import (
     UserFollowingDataset,
     UserFollowingGroup,
 )
+from saved_search import (
+    SavedSearch
+)
 from system_info import (
     system_info_table,
     system_info_revision_table,

@@ -364,6 +364,8 @@ def make_map():
         m.connect('/user/activity/{id}/{offset}', action='activity')
         m.connect('user_activity_stream', '/user/activity/{id}',
                   action='activity', ckan_icon='clock-o')
+        m.connect('user_saved_search', '/user/saved_search/{id}',
+                  action='saved_search', ckan_icon='search')
         m.connect('user_dashboard', '/dashboard', action='dashboard',
                   ckan_icon='list')
         m.connect('user_dashboard_datasets', '/dashboard/datasets',

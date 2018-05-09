@@ -1035,7 +1035,6 @@ def send_email_notifications(context, data_dict):
 
     email_notifications.get_and_send_notifications_for_all_users()
 
-
 def package_owner_org_update(context, data_dict):
     '''Update the owning organization of a dataset
 

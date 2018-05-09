@@ -57,6 +57,12 @@
       pointer-events: none; // Future-proof disabling of clicks on `<a>` elements
     }
   }
+
+  a& {
+    &.show-title-when-disabled {
+      pointer-events: auto; // Allow for special cases
+    }
+  }
 }
 
 

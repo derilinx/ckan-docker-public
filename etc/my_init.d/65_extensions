@@ -26,3 +26,5 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "search.facets.limit = 500"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.follow_searches_enabled = true"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.follow_searches_max_number = 30"

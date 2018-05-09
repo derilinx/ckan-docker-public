@@ -34,6 +34,9 @@ parse_params = logic.parse_params
 lookup_group_plugin = ckan.lib.plugins.lookup_group_plugin
 lookup_group_controller = ckan.lib.plugins.lookup_group_controller
 
+def _encode_params(params):
+    return [(k, v.encode('utf-8') if isinstance(v, basestring) else str(v))
+            for k, v in params]
 
 class GroupController(base.BaseController):
 
@@ -292,6 +295,8 @@ class GroupController(base.BaseController):
             params = list(params_nopage)
             params.append(('page', page))
             return search_url(params)
+
+        c.search_url_params = urlencode(_encode_params(params_nopage))
 
         try:
             c.fields = []

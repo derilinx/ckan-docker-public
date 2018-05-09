@@ -8,13 +8,21 @@ users.
 '''
 import datetime
 import re
+import logging
+import urllib2
 
 import ckan.model as model
 import ckan.logic as logic
 import ckan.lib.base as base
+import ckan.lib.helpers as h
 
+from ckan.lib.search import SearchError, SearchQueryError
+from ckan.lib.dictization import model_dictize
+from ckan.lib.dictization import model_save
 from ckan.common import ungettext, config
+from paste.deploy.converters import asbool
 
+log = logging.getLogger(__name__)
 
 def string_to_timedelta(s):
     '''Parse a string s and return a standard datetime.timedelta object.
@@ -70,6 +78,36 @@ def string_to_timedelta(s):
             microseconds=microseconds)
     return delta
 
+def _notifications_for_saved_searches(activities, user_dict):
+    '''Return one or more email notifications covering the given searches.
+
+    This function handles grouping multiple searches into a single digest
+    email.
+
+    :param activities: the searches to consider
+    :type searches: list of activity dicts like those returned by
+        ckan.logic.action.get.dashboard_activity_list()
+
+    :returns: a list of email notifications
+    :rtype: list of dicts each with keys 'subject' and 'body'
+
+    '''
+    if not activities:
+        return []
+
+    if not user_dict.get('activity_streams_email_notifications'):
+        return []
+
+    subject = "New result information from " + config.get('ckan.site_title')
+    body = base.render(
+            'activity_streams/saved_searches_email_notifications.text',
+            extra_vars={'activities': activities})
+    notifications = [{
+        'subject': subject,
+        'body': body
+        }]
+
+    return notifications
 
 def _notifications_for_activities(activities, user_dict):
     '''Return one or more email notifications covering the given activities.
@@ -113,6 +151,103 @@ def _notifications_for_activities(activities, user_dict):
 
     return notifications
 
+def _make_parameters(query_string):
+    parts = query_string.split("&")
+    res = []
+    for part in parts:
+        s = part.split("=")
+        if len(s) > 1:
+            res.append((s[0], urllib2.unquote(s[1].replace("+", " "))))
+    return res
+
+def _notifications_from_saved_searches(user_dict, since):
+    # Note we ignore "since" here as we aren't going to
+    # look at when the search changed
+    context = {'model': model, 'session': model.Session,
+            'user': user_dict['id']}
+    # FIXME: same comment as below regarding direct
+    # access to model applies here - move to logic
+    _search_list = model.saved_search.user_saved_searches_list(user_dict['id']) 
+    search_list = model_dictize.saved_search_list_dictize(_search_list, context)
+    activity_list = []
+    for search in search_list:
+        # Here we also build a link to search (needed for email later)
+        # FIXME: Put this into a function so that the listing of searches can also do it
+        if True:
+            if True:
+                fq = ''
+                q = ''
+                search_extras = {}
+                for (param, value) in _make_parameters(search['search_string'].replace("?","")):
+                    if param not in ['q', 'page', 'sort'] \
+                            and len(value) and not param.startswith('_'):
+                        if not param.startswith('ext_'):
+                            if param == "organization":
+                                param = "owner_org"
+                            fq += ' %s:"%s"' % (param, value)
+                        else:
+                            search_extras[param] = value
+                    elif param == 'q':
+                        q = value
+                    elif param == '_search_organization' and value != '0':
+                        fq += ' owner_org:%s' % (value)
+                    elif param == '_search_group' and value != '0':
+                        fq += ' groups:%s' % (value)
+                    elif param == '_search_package_type' and value != '0':
+                        package_type = value
+                        type_is_search_all = h.type_is_search_all(package_type)
+
+                        if not type_is_search_all:
+                        # Only show datasets of this particular type
+                            fq += ' +dataset_type:{type}'.format(type=package_type)
+
+                data_dict = {
+                    'q': q,
+                    'fq': fq.strip(),
+                    'rows': 1000,
+                    'extras': search_extras,
+                    'include_private': asbool(config.get(
+                    'ckan.search.default_include_private', True)),
+                }
+
+                query = logic.get_action('package_search')(context, data_dict)
+                ids = set()
+                for result in query['results']:
+                    ids.add(result['id'])
+                if search['last_run']:
+                    last_ids = search['last_results']
+                    last_ids = set(last_ids)
+                    difference = len(ids - last_ids)
+                    # If there's a difference in result lists
+                    if difference > 0: 
+                        activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_changed'}}
+                        activity_list.append(activity)
+                    else:
+                        # If any result updated
+                        resultchange = False
+                        for result in query['results']:
+                            fmt = '%Y-%m-%dT%H:%M:%S.%f'
+                            if datetime.datetime.strptime(result['metadata_modified'], fmt) >  datetime.datetime.strptime(search['last_run'], fmt):
+                                activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_updated'}}
+                                activity_list.append(activity)
+                                break
+            
+                search['last_results'] = list(ids)
+                search['last_run'] = datetime.datetime.utcnow()
+ 
+                model_save.saved_search_dict_save(search, context)
+
+                if not context.get('defer_commit'):
+                    model.repo.commit()
+            
+        #except SearchQueryError, se:
+        #    # FIXME: Ideally, tell user about this so they can delete/edit
+        #    log.error('Dataset search query rejected: %r', se.args)
+        #except SearchError, se:
+        #    # FIXME: Ideally, tell user about this so they can delete/edit/inform admin
+        #    log.error('Dataset search error: %r', se.args) 
+
+    return _notifications_for_saved_searches(activity_list, user_dict)
 
 def _notifications_from_dashboard_activity_list(user_dict, since):
     '''Return any email notifications from the given user's dashboard activity
@@ -135,6 +270,16 @@ def _notifications_from_dashboard_activity_list(user_dict, since):
     activity_list = [activity for activity in activity_list
             if strptime(activity['timestamp'], fmt) > since]
 
+    # Filter out duplicate activities:
+    id_set = set()
+    unfiltered_list = activity_list
+    activity_list = []
+    for activity in unfiltered_list:
+        if activity['object_id'] in id_set:
+            continue
+        activity_list.append(activity)
+        id_set.add(activity['object_id'])
+    
     return _notifications_for_activities(activity_list, user_dict)
 
 
@@ -143,6 +288,7 @@ def _notifications_from_dashboard_activity_list(user_dict, since):
 # notifications.
 _notifications_functions = [
     _notifications_from_dashboard_activity_list,
+    _notifications_from_saved_searches
     ]
 
 
@@ -217,10 +363,11 @@ def get_and_send_notifications_for_user(user):
     dash.email_last_sent = datetime.datetime.utcnow()
     model.repo.commit()
 
-
 def get_and_send_notifications_for_all_users():
     context = {'model': model, 'session': model.Session, 'ignore_auth': True,
             'keep_email': True}
     users = logic.get_action('user_list')(context, {})
+    
     for user in users:
         get_and_send_notifications_for_user(user)
+
