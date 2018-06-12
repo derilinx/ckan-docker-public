@@ -9,7 +9,7 @@
     <li class="item new-package" id="{{ search.id }}">
       <i class="fa icon fa-search"></i>
       <div class="actor">
-      <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow">&nbsp;<i class="fa fa-trash"></i></a>
+        <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow" data-module-context="list">&nbsp;<i class="fa fa-trash"></i></a>
       </div>
       <p>&nbsp;
       <a href="{{ search.search_url_in_ckan }}">{{ search.search_anchor_text | truncate(75) }}</a>
