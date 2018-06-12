@@ -1,8 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
 # this will fail if you didn't kill the db too... how best to fix that...
 set +e
 set -u
+
+# only build if $INITIAL_BUILD is set
+DO_BUILD=${INITIAL_BUILD:-0}
+if [[ $DO_BUILD -ne 1 ]] ; then exit ; fi
+
 
 : ${ADMIN_PASSWORD:=}
 : ${ADMIN_EMAIL:=}

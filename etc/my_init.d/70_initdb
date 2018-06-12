@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 #A tiger table interferes with a CKAN table, and we don't need tiger anyway
@@ -6,8 +6,15 @@ set -eu
 if [ -z "$DATABASE_URL" ]; then
     DATABASE_URL="postgresql://${DB_ENV_POSTGRES_USER}:${DB_ENV_POSTGRES_PASS}@${DB_PORT_5432_TCP_ADDR}:${DB_PORT_5432_TCP_PORT}/${DB_ENV_POSTGRES_DB}"
 fi
-psql $DATABASE_URL -c "drop extension postgis_tiger_geocoder" || echo "Postgis tiger already removed";
+
+echo "Dropping postgis_tiger_geocoder if it exists"
+psql $DATABASE_URL -c "drop extension if exists postgis_tiger_geocoder" 
 
 "$CKAN_HOME"/bin/paster --plugin=ckan db upgrade -c "${CKAN_CONFIG}/ckan.ini" || echo "Command failed; probably not a problem";
 "$CKAN_HOME"/bin/paster --plugin=ckan db init -c "${CKAN_CONFIG}/ckan.ini"
+
+# only build if $INITIAL_BUILD is set
+DO_BUILD=${INITIAL_BUILD:-0}
+if [[ $DO_BUILD -ne 1 ]] ; then exit ; fi
+
 "$CKAN_HOME"/bin/paster --plugin=ckan datastore set-permissions -c "${CKAN_CONFIG}/ckan.ini" | psql $DATASTORE_DB_URL
