@@ -139,7 +139,7 @@ def saved_search_list_dictize(search_list, context):
         reconstruct_search['base'] = h.url_for(controller='package', action='search')
         reconstruct_search['end'] = ""
         for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
-            if param not in ['q', 'page', 'sort'] \
+            if param not in ['page', 'sort'] \
                     and len(value) and not param.startswith('_'):
                 reconstruct_search['end'] += param + "=" + value + "&"
             elif param == '_search_organization' and value != '0':
