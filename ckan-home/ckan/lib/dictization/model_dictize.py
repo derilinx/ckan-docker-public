@@ -13,6 +13,7 @@ which builds the dictionary by iterating over the table columns.
 '''
 import datetime
 import urlparse
+import urllib
 
 from ckan.common import config
 from sqlalchemy.sql import select
@@ -132,10 +133,17 @@ def saved_search_list_dictize(search_list, context):
         return res
 
     result_list = []
+    param_map = {'category': 'Category',
+                 'country': 'Country',
+                 'res_format': 'Resource Format',
+                 'q': 'Query',
+                 'fq': 'Facet Query',
+                 }
     for search in search_list:
         search_dict = saved_search_dictize(search, context)
 
         reconstruct_search = {}
+        search_anchor = []
         reconstruct_search['base'] = h.url_for(controller='package', action='search')
         reconstruct_search['end'] = ""
         for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
@@ -149,12 +157,15 @@ def saved_search_list_dictize(search_list, context):
             elif param == '_search_package_type' and value != '0':
                 package_type = value
                 reconstruct_search['base'] = h.url_for(controller='package', action='search').replace('/dataset', '/' + package_type)
-
+            if param in ('q', 'fq', 'category', 'res_format', 'country'):
+                search_anchor.append("%s: %s"%(param_map[param], urllib.unquote(value)))
+                                
         if len(reconstruct_search['end']) > 0:
             reconstruct_search['end'] = reconstruct_search['end'][0:len(reconstruct_search['end'])-1]
 
         search_dict['search_url_in_ckan'] = reconstruct_search['base'] + "?" + reconstruct_search['end'] 
-
+        search_dict['search_anchor_text'] = ", ".join(search_anchor) or "Blank"
+        
         result_list.append(search_dict)
 
     return sorted(result_list, key=lambda x: x["timestamp"])
