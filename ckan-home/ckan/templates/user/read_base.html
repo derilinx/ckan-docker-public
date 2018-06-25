@@ -20,6 +20,7 @@
   {{ h.build_nav_icon('user_activity_stream', _('Activity Stream'), id=user.name) }}
   {% if h.follow_searches_available() %}
     {{ h.build_nav_icon('user_saved_search', _('Saved Searches'), id=user.name) }}
+    {{ h.build_nav_icon('user_followed_datasets', _('Followed Datasets'), id=user.name) }}
   {% endif %}
 {% endblock %}
 

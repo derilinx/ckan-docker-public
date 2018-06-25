@@ -621,6 +621,30 @@ class UserController(base.BaseController):
 
         return render('user/saved_search.html')
 
+    def followed_datasets(self, id, offset=0):
+        '''Render this user's followed datasets.'''
+
+        context = {'model': model, 'session': model.Session,
+                   'user': c.user, 'auth_user_obj': c.userobj,
+                   'for_view': True}
+        data_dict = {'id': id, 'user_obj': c.userobj,
+                     'include_num_followers': True}
+        try:
+            check_access('user_show', context, data_dict)
+        except NotAuthorized:
+            abort(403, _('Not authorized to see this page'))
+
+        self._setup_template_variables(context, data_dict)
+
+
+        followed_items = get_action('followee_list')(
+                context, {'id': c.user_dict['id']})
+
+        c.followed_datasets = [d for d in followed_items
+                               if d.get('type') == 'dataset']
+        
+        return render('user/followed_datasets.html')
+    
     def _get_dashboard_context(self, filter_type=None, filter_id=None, q=None):
         '''Return a dict needed by the dashboard view to determine context.'''
 

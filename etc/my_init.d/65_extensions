@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = scheming_datasets stats text_view image_view datatables_view recline_graph_view recline_map_view recline_view webpage_view datastore datapusher nrgi dietstars spatial_metadata spatial_query officedocs_view dcat dcat_json_interface pages pdf_view geo_view geojson_view wmts_view resource_proxy s3filestore googleanalytics"
+
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = scheming_datasets stats text_view image_view datatables_view recline_graph_view recline_map_view recline_view webpage_view datastore datapusher nrgi dietstars spatial_metadata spatial_query officedocs_view dcat dcat_json_interface pages pdf_view geo_view geojson_view wmts_view resource_proxy s3filestore googleanalytics sqlalchemythread"
 
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = geojson_view image_view text_view datatables_view pdf_view officedocs_view geo_view wmts_view"

@@ -1,0 +1,24 @@
+{% extends "user/read.html" %}
+
+{% block subtitle %}{{ _('Followed Datasets') }} - {{ super() }}{% endblock %}
+
+{% block primary_content_inner %}
+  <h2 class="hide-heading">{% block page_heading %}{{ _('Followed Datasets') }}{% endblock %}</h2>
+  <ul class="activity">
+  {% for dataset in c.followed_datasets %}
+    <li class="item new-package" id="{{ dataset.dict.id }}">
+      <i class="fa icon fa-sitemap"></i>
+      <div class="actor">
+	<a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="dataset" data-module-id="{{ dataset.dict.id }}" data-module-action="unfollow" data-module-context="list">&nbsp;<i class="fa fa-trash"></i></a>
+      </div>
+      <p>&nbsp;
+      <a href="/dataset/{{ dataset.dict.name  }}">{{ dataset.display_name }}</a>
+        <span class="date">
+          {% if dataset.dict.metadata_modified %}
+            Last Modified: {{ dataset.dict.metadata_modified.split('T')[0] }}
+	  {% endif %}
+        </span>
+      </p>
+    </li>
+  {% endfor %}
+{% endblock %}
