@@ -99,6 +99,7 @@ ADD ./etc/my_init.d/65_extensions /etc/my_init.d
 ADD ./etc/my_init.d/70_initdb /etc/my_init.d
 ADD ./etc/my_init.d/80_initadmin /etc/my_init.d
 ADD ./etc/svc /etc/service
+COPY version.txt $CKAN_HOME/
 CMD ["/sbin/my_init"]
 
 # Volumes
