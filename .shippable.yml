@@ -12,6 +12,9 @@ env:
 
 build:
   ci:
+    # Create the version file
+    - ./create_version.sh
+
     # Pull latest image to be used as cache
     - docker pull nrgi/resourcedata.org:$BRANCH || echo 'Cache not available'
 
