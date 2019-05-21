@@ -38,10 +38,11 @@ integrations:
     - integrationName: email
       type: email
       recipients:
-        - nrgi@vitaminsoftware.com
+        - adina@vitaminsoftware.com
       branches:
         only:
           - nrgi
           - staging
+          - 395-fix-ckan-build
       on_success: change
       on_failure: always
