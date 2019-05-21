@@ -8,7 +8,7 @@ branches:
 env:
   global:
     # Shippable API token used to trigger deploy
-    - secure: SZA0qZmjQACdI4vxyq62Ych//alfJlT+7+j973fAKd6S5iSeQ8aeas4f5f3+1bRi1vjpaBNZ+ZOKWDtQnXGdAECf1/Wdw/HexPGtgbM39oDCdrkBZpimaV0wugqlg7AmEPe6GYGgmubnPu5H4txm0wCMHuHsbaWy/0lpz/F3T7jkImfNB/2cL7fiJRrJKXtFeCfR/YFOHIavmC2SGHd+1ZXptH4TGAnAZFQ8FsGf/Om1qMYgbvS45kfvTX6yYzg5bAJh4zwLTicFpj+wisrUrirVIwfgEh9MGjWCHGb8AweCsUdVluxczkwNi08qvpYB9MeniSqrDl31Lh/zi80Tmg==
+    - secure: Kzet68YJ2Lz38O5C5zZTSNcpYi06623KU6ouEmIuw2IYHiuFpYxemuPYobREJvSxFSTmrVsRh/gCgJ20p5b+wKwnWpqFIMd/rmujuwVgOzVy4o8Z1O+Wx4WWyDs00FC6HW+O/jKs5tVkx77hG3xTvlAXfBOP7we/vpZ4i1qF9LOj23CT1ZJluKT3zjDwp8QKNuUJ6oliLeXWpw+0TloMVPqXN4c4giNlGFO65e2ismM2C+Vxj6B7IlwR1CPVv7LYZsgrnYAlxDEfySiFv07ole5LjEPnpmEKGHHKllEpnqNDKqhlnL9DceC8FN/7RGn+rSSyGnTJR6SIzBjDg8aTKw==
 
 build:
   ci:
@@ -38,10 +38,11 @@ integrations:
     - integrationName: email
       type: email
       recipients:
-        - nrgi@vitaminsoftware.com
+        - adina@vitaminsoftware.com
       branches:
         only:
           - nrgi
           - staging
+          - 395-fix-ckan-build
       on_success: change
       on_failure: always
