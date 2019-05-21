@@ -25,10 +25,6 @@ fi
 # Id of the Shippable project containing the deploy script.
 DEPLOY_PROJECT_ID=5804f143e8fe021000f9aed1
 
-echo "API Token:"
-echo "$API_TOKEN"
-echo "!!!!!"
-
 # Trigger Shippable to run the deploy project and pass the current project name, branch and latest commit
 STATUS=$(curl -s\
   -H "Authorization: apiToken $API_TOKEN"\
