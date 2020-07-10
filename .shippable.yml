@@ -8,7 +8,7 @@ branches:
 env:
   global:
     # Shippable API token used to trigger deploy
-    - secure: Kzet68YJ2Lz38O5C5zZTSNcpYi06623KU6ouEmIuw2IYHiuFpYxemuPYobREJvSxFSTmrVsRh/gCgJ20p5b+wKwnWpqFIMd/rmujuwVgOzVy4o8Z1O+Wx4WWyDs00FC6HW+O/jKs5tVkx77hG3xTvlAXfBOP7we/vpZ4i1qF9LOj23CT1ZJluKT3zjDwp8QKNuUJ6oliLeXWpw+0TloMVPqXN4c4giNlGFO65e2ismM2C+Vxj6B7IlwR1CPVv7LYZsgrnYAlxDEfySiFv07ole5LjEPnpmEKGHHKllEpnqNDKqhlnL9DceC8FN/7RGn+rSSyGnTJR6SIzBjDg8aTKw==
+    - secure: MEFUkaoXFiR2Y2FjMt5qjEAyZyQlAjeIL1ofgVeg9JxAuNCjIkf6Fu8LSC43zocBHCDynpDPmYljDMsj6BNlMdgzlCs4EiMVVihdUIaRaxR+n3fvRlbipcJZifprYmPnPoiVyWuhcuUO3O1+UpTRpjNgqdReWchJgx32iTvAImVju6MoWxLcWbLhFMYJfU+otCMWoh7C9R8A6VyzVCSqwvTT/b2hWeUAPTS6SaPt9uBe2fP8BbLax0hAJLZLTpeeGlZINI2yjgMGX5wdxevdk/Vij6Y+VhLl2p3P/rlUGsEItI+3D3Vl3t9yIEl/6PlikX319u3O/e2noawpv/s4eg==
 
 build:
   ci:
