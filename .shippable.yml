@@ -8,8 +8,7 @@ branches:
 env:
   global:
     # Shippable API token used to trigger deploy
-    - secure: Olg1w/ffmaYAWzsaQ9r7Jd0F1dJi/IFJOBQIZG+Y+kDrIlhdRq5NBWn4cnLkM09q54SxTsQCVLiG6KdKSyQq0JFEc+6voT/p65EYZ3TIWFvBGUh2aAhYPZFB01x0NHLiNWSJQ6UcsUIABpIXLBc98/KV1IxKxCW+/XnPA1NQtPDXldjFWqCE3dDdSWAJuPmt3mJNMlvCB+g+jWxK9+volHoJxNFL/eVEjbJwwoejfeY1y61A7jhJu9ZRen4b+TOCojPiHw94B6MaKayD48s77snE6cI3bzDfZGOuN3pWf7Vk+4Mq11u+3mF7QfdCF2+38uFN73l8vcEFxPMl3kwxMg==
-
+    - secure: MEFUkaoXFiR2Y2FjMt5qjEAyZyQlAjeIL1ofgVeg9JxAuNCjIkf6Fu8LSC43zocBHCDynpDPmYljDMsj6BNlMdgzlCs4EiMVVihdUIaRaxR+n3fvRlbipcJZifprYmPnPoiVyWuhcuUO3O1+UpTRpjNgqdReWchJgx32iTvAImVju6MoWxLcWbLhFMYJfU+otCMWoh7C9R8A6VyzVCSqwvTT/b2hWeUAPTS6SaPt9uBe2fP8BbLax0hAJLZLTpeeGlZINI2yjgMGX5wdxevdk/Vij6Y+VhLl2p3P/rlUGsEItI+3D3Vl3t9yIEl/6PlikX319u3O/e2noawpv/s4eg==
 build:
   ci:
     # Create the version file
