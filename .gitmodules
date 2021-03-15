@@ -4,3 +4,6 @@
 [submodule "extensions/ckanext-nrgi"]
 	path = extensions/ckanext-nrgi
 	url = https://github.com/derilinx/ckanext-nrgi-published.git
+[submodule "ckan-upstream"]
+	path = ckan-upstream
+	url = https://github.com/ckan/ckan.git
