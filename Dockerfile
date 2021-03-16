@@ -41,7 +41,11 @@ RUN apt-get -q -y update && \
         libxslt1-dev \
         libgeos-c1v5 \
         libgeos-dev \
-        postgresql-client
+        libmagic-dev \
+        postgresql-client \
+   && apt-get -qy autoremove \
+   && apt-get clean \
+   && rm -r /var/lib/apt/lists/*
 
 # install less
 WORKDIR $CKAN_HOME/src/ckan
@@ -75,6 +79,16 @@ ADD ./core-patches-2.7.10 /usr/lib/ckan/default/src/ckan/core-patches-2.7.10
 RUN cd /usr/lib/ckan/default/src/ckan && find core-patches-2.7.10 -name '*.patch' | sort | xargs -n 1 patch -p1 -i
 
 ADD glyphicons.tgz ./ckan/public/base/vendor/bootstrap
+
+# lessc -- for the front end build
+RUN mkdir --parents  /usr/lib/ckan/default/src/ckan/node_modules/.bin && \
+    [ ! -e /usr/lib/ckan/default/src/ckan/node_modules/.bin/lessc ] && \
+    ln -s `which lessc` /usr/lib/ckan/default/src/ckan/node_modules/.bin/lessc || true
+
+# frontend build
+RUN lessc ckan/public/base/less/main.less ckan/public/base/css/main.css && \
+    find ckan/public/base/ -name '*.css' | grep -v '.min' | perl -p -e 's/.css$//;' | xargs -n 1 -I{} sh -c "echo 'Minimizing {}.css'; ckan/include/rcssmin.py < {}.css > {}.min.css" && \
+    find ckan/public/base/ -name '*.js' | grep -v '.min' | perl -p -e 's/.js$//;' | xargs -n 1 -I{} sh -c "echo 'Minimizing {}.js'; python ckan/include/rjsmin.py < {}.js > {}.min.js"
 
 # http://serverfault.com/a/711172
 # get apache logs in docker-compose logs ckan
@@ -113,4 +127,4 @@ CMD ["/sbin/my_init"]
 #VOLUME ["/var/lib/ckan"]
 EXPOSE 80
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN rm -r /tmp/* /var/tmp/*
