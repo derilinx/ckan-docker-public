@@ -3,3 +3,8 @@ myorigin = /etc/mailname
 inet_interfaces = loopback-only
 mydestination =
 relay_domains =
+
+# updates, opportunistic ssl
+smtp_tls_security_level = may
+# we're not using advanced features here.
+compatibility_level = 2
