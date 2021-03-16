@@ -1,0 +1,237 @@
+From 8312600764d81d6e333af43d90b8db524a50cfdc Mon Sep 17 00:00:00 2001
+From: Eric Soroos <eric@derilinx.com>
+Date: Tue, 16 Mar 2021 15:13:23 +0000
+Subject: [PATCH] Fix parens around grid-gutter-width
+
+---
+ ckan/public/base/less/ckan.less     |  2 +-
+ ckan/public/base/less/forms.less    | 14 +++++++-------
+ ckan/public/base/less/layout.less   |  2 +-
+ ckan/public/base/less/masthead.less | 22 +++++++++++-----------
+ ckan/public/base/less/media.less    |  4 ++--
+ ckan/public/base/less/module.less   |  8 ++++----
+ ckan/public/base/less/toolbar.less  |  2 +-
+ 7 files changed, 27 insertions(+), 27 deletions(-)
+
+diff --git a/ckan/public/base/less/ckan.less b/ckan/public/base/less/ckan.less
+index f2ed0ef04..2d648b23c 100644
+--- a/ckan/public/base/less/ckan.less
++++ b/ckan/public/base/less/ckan.less
+@@ -100,7 +100,7 @@ iframe {
+ 
+ .page-heading {
+     margin-top: 0;
+-    margin-bottom: @grid-gutter-width/2;
++    margin-bottom: (@grid-gutter-width/2);
+ }
+ 
+ .m-top {
+diff --git a/ckan/public/base/less/forms.less b/ckan/public/base/less/forms.less
+index 85d54848b..5b71015d8 100644
+--- a/ckan/public/base/less/forms.less
++++ b/ckan/public/base/less/forms.less
+@@ -34,7 +34,7 @@ label.checkbox:after {
+ .cr-controls-reset {
+     position: relative;
+     margin-left: initial;
+-    margin-right: @grid-gutter-width/6;
++    margin-right: (@grid-gutter-width/6);
+     top: 2px;
+ }
+ 
+@@ -95,7 +95,7 @@ textarea {
+ 
+ .control-medium {
+     @media (min-width: @screen-md-min) {
+-        width: calc(~"50% - " @grid-gutter-width/2);
++        width: calc(~"50% - " (@grid-gutter-width/2));
+     }
+ }
+ 
+@@ -192,7 +192,7 @@ textarea {
+ 
+ @media (min-width: @screen-md-min) {
+     .form-group .info-block {
+-        padding: @grid-gutter-width/6 0 @grid-gutter-width/6 @grid-gutter-width/3;
++        padding: (@grid-gutter-width/6) 0 (@grid-gutter-width/6) (@grid-gutter-width/3);
+     }
+     .form-group .info-inline {
+         margin-top: 0;
+@@ -296,7 +296,7 @@ input[data-module="autocomplete"] {
+     width: 17px;
+     padding: 0;
+     top: 50%;
+-    right: @grid-gutter-width/3;
++    right: (@grid-gutter-width/3);
+     margin-top: -10px;
+     background-color: transparent;
+     border: none;
+@@ -334,13 +334,13 @@ input[data-module="autocomplete"] {
+ .control-custom {
+     font-size: 0; // Remove whitespace between fields.
+     .input-group {
+-        margin-bottom: @grid-gutter-width/3;
++        margin-bottom: (@grid-gutter-width/3);
+     }
+ }
+ 
+ .control-custom .checkbox {
+     display: inline-block;
+-    margin: 2px 0 2px @grid-gutter-width/3;
++    margin: 2px 0 2px (@grid-gutter-width/3);
+ }
+ 
+ .control-custom .checkbox input {
+@@ -418,7 +418,7 @@ input[data-module="autocomplete"] {
+ 
+ .error-inline {
+     color: @errorText;
+-    margin: @grid-gutter-width/3;
++    margin: (@grid-gutter-width/3);
+ }
+ 
+ .error-block,
+diff --git a/ckan/public/base/less/layout.less b/ckan/public/base/less/layout.less
+index f397776b9..3b5a9c3ed 100644
+--- a/ckan/public/base/less/layout.less
++++ b/ckan/public/base/less/layout.less
+@@ -267,7 +267,7 @@
+         }
+     }
+     .follow_button {
+-        margin: @grid-gutter-width/2 0;
++        margin: (@grid-gutter-width/2) 0;
+     }
+     &.editing {
+         .module-heading {}
+diff --git a/ckan/public/base/less/masthead.less b/ckan/public/base/less/masthead.less
+index 3ab192921..7aeb339ca 100644
+--- a/ckan/public/base/less/masthead.less
++++ b/ckan/public/base/less/masthead.less
+@@ -81,7 +81,7 @@
+ .masthead {
+     .clearfix(); //min-height: 55px;
+     margin-bottom: initial;
+-    padding: @grid-gutter-width/3 0;
++    padding: (@grid-gutter-width/3) 0;
+     color: @mastheadTextColor;
+     background: @mastheadBackgroundColor url("@{bgPath}");
+     .container {
+@@ -114,7 +114,7 @@
+         }
+     }
+     .navbar-collapse {
+-        padding: @grid-gutter-width/3 0;
++        padding: (@grid-gutter-width/3) 0;
+     }
+     .section {
+         float: left;
+@@ -150,12 +150,12 @@
+     }
+     .site-search {
+         @media (min-width: @screen-md-min) {
+-            margin-left: @grid-gutter-width/2;
++            margin-left: (@grid-gutter-width/2);
+         }
+-        margin: (@grid-gutter-width/6 - 1) @grid-gutter-width/3 - 2 (@grid-gutter-width/6 - 1) 0;
++        margin: ((@grid-gutter-width/6) - 1) (@grid-gutter-width/3) - 2 ((@grid-gutter-width/6) - 1) 0;
+         input {
+             width: 200px;
+-            padding: @grid-gutter-width/6 @grid-gutter-width/3;
++            padding: (@grid-gutter-width/6) (@grid-gutter-width/3);
+         }
+     }
+     .btn-navbar-btn,
+@@ -191,10 +191,10 @@
+ 
+ @media (max-width: @screen-sm-max) {
+     .account-masthead {
+-        margin-left: -@grid-gutter-width/2;
+-        margin-right: -@grid-gutter-width/2;
+-        padding-left: @grid-gutter-width/2;
+-        padding-right: @grid-gutter-width/2;
++        margin-left: -(@grid-gutter-width/2);
++        margin-right: -(@grid-gutter-width/2);
++        padding-left: (@grid-gutter-width/2);
++        padding-right: (@grid-gutter-width/2);
+     }
+     .masthead {
+         .section {
+@@ -204,8 +204,8 @@
+             }
+         }
+         .container {
+-            padding-left: @grid-gutter-width/2;
+-            padding-right: @grid-gutter-width/2;
++            padding-left: (@grid-gutter-width/2);
++            padding-right: (@grid-gutter-width/2);
+         }
+         .site-search {
+             display: none;
+diff --git a/ckan/public/base/less/media.less b/ckan/public/base/less/media.less
+index 193726c06..67a6f9c30 100644
+--- a/ckan/public/base/less/media.less
++++ b/ckan/public/base/less/media.less
+@@ -35,8 +35,8 @@
+     position: relative;
+     float: left;
+     width: 178px;
+-    padding: @grid-gutter-width/2;
+-    margin: @grid-gutter-width/2 0 0 @grid-gutter-width/2;
++    padding: (@grid-gutter-width/2);
++    margin: (@grid-gutter-width/2) 0 0 (@grid-gutter-width/2);
+     background-color: white;
+     .border-radius(3px);
+     span.count {
+diff --git a/ckan/public/base/less/module.less b/ckan/public/base/less/module.less
+index 943acdaca..ee2108942 100644
+--- a/ckan/public/base/less/module.less
++++ b/ckan/public/base/less/module.less
+@@ -1,11 +1,11 @@
+ .module {
+     >.page-header {
+-        margin-top: @grid-gutter-width/2;
++        margin-top: (@grid-gutter-width/2);
+     }
+ 
+     > .module-content{
+         &:nth-child(2n){
+-            padding-top: @grid-gutter-width/2;
++            padding-top: (@grid-gutter-width/2);
+         }
+     }
+ }
+@@ -13,7 +13,7 @@
+ .module-heading {
+     .clearfix;
+     margin: 0;
+-    padding: @grid-gutter-width/3 @gutterX;
++    padding: (@grid-gutter-width/3) @gutterX;
+     font-size: @font-size-base;
+     line-height: 1.3;
+     background-color: @moduleHeadingBackgroundColor;
+@@ -63,7 +63,7 @@
+ .pagination-wrapper{
+     text-align: center;
+     border-top: 1px solid @hr-border;
+-    padding-top: @grid-gutter-width/3; 
++    padding-top: (@grid-gutter-width/3); 
+ }
+ 
+ // .module-content .pagination {
+diff --git a/ckan/public/base/less/toolbar.less b/ckan/public/base/less/toolbar.less
+index 56f60d497..4915c01b4 100644
+--- a/ckan/public/base/less/toolbar.less
++++ b/ckan/public/base/less/toolbar.less
+@@ -88,7 +88,7 @@
+ 
+ .page-header {
+     &.module-content{
+-        padding-top: @grid-gutter-width/2;
++        padding-top: (@grid-gutter-width/2);
+         padding-bottom: 0;
+     }
+     margin-top: @grid-gutter-width;
+-- 
+2.21.1 (Apple Git-122.3)
+
