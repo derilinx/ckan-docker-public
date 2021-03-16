@@ -1,0 +1,14 @@
+-e ./ckanext-nrgi/
+-r ./ckanext-nrgi/requirements.txt
+-e ./ckanext-sqlalchemythread/
+-e 'git+https://github.com/derilinx/ckanext-dietstars.git#egg=ckanext-dietstars'
+-e 'git+https://github.com/ckan/ckanext-geoview.git#egg=ckanext-geoview'
+-e 'git+https://github.com/jqnatividad/ckanext-officedocs.git#egg=ckanext-officedocs'
+-e 'git+https://github.com/ckan/ckanext-spatial.git#egg=ckanext-spatial'
+-e 'git+https://github.com/derilinx/ckanext-pdfview.git#egg=ckanext-pdfview'
+-e 'git+https://github.com/derilinx/ckanext-pages.git#egg=ckanext-pages'
+-e 'git+https://github.com/derilinx/ckanext-dcat-public.git@6a8ce7161ee252fa9fa0ee100a5baa8d8e9f753e#egg=ckanext-dcat'
+-e 'git+https://github.com/keitaroinc/ckanext-s3filestore.git@ckan-2.8#egg=ckanext-s3filestore'
+-e 'git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming'
+-e ./ckanext-googleanalytics/
+-r ./ckanext-googleanalytics/requirements.txt

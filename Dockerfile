@@ -1,8 +1,12 @@
-FROM phusion/baseimage:0.9.18
+FROM phusion/baseimage:bionic-1.0.0
 MAINTAINER Derilinx
 
 # Disable SSH
-RUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qy remove openssh-server openssh-sftp-server && \
+    rm -r /etc/service/sshd || true && \
+    rm /etc/my_init.d/00_regen_ssh_host_keys.sh || true
+
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
 ENV HOME /root
 ENV CKAN_HOME /usr/lib/ckan/default
@@ -11,8 +15,9 @@ ENV CKAN_DATA /var/lib/ckan
 ENV CKAN_EXTENSIONS /usr/lib/ckan-extensions
 
 # Install required packages
-RUN apt-get -q -y update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install \
+RUN apt-get -q -y update && \
+   DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"  dist-upgrade && \
+   DEBIAN_FRONTEND=noninteractive apt-get -qy install \
         python-minimal \
         python-dev \
         python-virtualenv \
@@ -26,50 +31,51 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install \
         git \
         ack-grep \
         vim \
+        emacs-nox \
+        tzdata \
+        curl \
+        gettext\
+        nodejs \
         libffi-dev \
         libxml2-dev \
         libxslt1-dev \
-        libgeos-c1 \
+        libgeos-c1v5 \
         libgeos-dev \
         postgresql-client
+
+# install less
+WORKDIR $CKAN_HOME/src/ckan
+RUN npm install less
 
 # Install CKAN
 RUN virtualenv $CKAN_HOME
 RUN mkdir -p $CKAN_HOME $CKAN_CONFIG $CKAN_DATA $CKAN_DATA/storage/uploads
 RUN chown -R www-data:www-data $CKAN_DATA
 
-ADD ./ckan-home/requirement-setuptools.txt $CKAN_HOME/src/ckan/requirement-setuptools.txt
-RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/requirement-setuptools.txt
-ADD ./ckan-home/requirements.txt $CKAN_HOME/src/ckan/requirements.txt
-RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/requirements.txt
-ADD ./ckan-home/dev-requirements.txt $CKAN_HOME/src/ckan/dev-requirements.txt
-RUN $CKAN_HOME/bin/pip install --upgrade -r $CKAN_HOME/src/ckan/dev-requirements.txt
-ADD ./ckan-home $CKAN_HOME/src/ckan/
-RUN $CKAN_HOME/bin/pip install -e $CKAN_HOME/src/ckan/
+ADD ./ckan-upstream $CKAN_HOME/src/ckan/
+ADD ./ckan-home/requirements.txt ./ckan-home/dev-requirements.txt $CKAN_HOME/src/ckan/
+
+RUN $CKAN_HOME/bin/pip install --upgrade 'setuptools==41.0.0'
+RUN $CKAN_HOME/bin/pip install -v -v --use-feature=2020-resolver --upgrade \
+    -r $CKAN_HOME/src/ckan/requirements.txt \
+    -r $CKAN_HOME/src/ckan/dev-requirements.txt \
+    -e $CKAN_HOME/src/ckan/
 RUN ln -s $CKAN_HOME/src/ckan/ckan/config/who.ini $CKAN_CONFIG/who.ini
 ADD ./etc/apache.wsgi $CKAN_CONFIG/apache.wsgi
 
 # Install extensions
-# local ones first, more likely to fail
 ADD ./extensions $CKAN_EXTENSIONS
-RUN $CKAN_HOME/bin/pip install -e $CKAN_EXTENSIONS/ckanext-nrgi/
-RUN $CKAN_HOME/bin/pip install -r $CKAN_EXTENSIONS/ckanext-nrgi/requirements.txt
-RUN $CKAN_HOME/bin/pip install -e $CKAN_EXTENSIONS/ckanext-sqlalchemythread/
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-dietstars.git#egg=ckanext-dietstars'
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-geoview.git#egg=ckanext-geoview'
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/jqnatividad/ckanext-officedocs.git#egg=ckanext-officedocs'
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-spatial.git#egg=ckanext-spatial'
-RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pdfview.git#egg=ckanext-pdfview'
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-pages.git#egg=ckanext-pages'
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/derilinx/ckanext-dcat-public.git@6a8ce7161ee252fa9fa0ee100a5baa8d8e9f753e#egg=ckanext-dcat'
-RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-dcat/requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/keitaroinc/ckanext-s3filestore.git@boto3-fix#egg=ckanext-s3filestore'
-RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-s3filestore/requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming'
-RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-scheming/requirements.txt
-RUN $CKAN_HOME/bin/pip install -e 'git+https://github.com/ckan/ckanext-googleanalytics#egg=ckanext-googleanalytics'
-RUN $CKAN_HOME/bin/pip install -r /usr/lib/ckan/default/src/ckanext-googleanalytics/requirements.txt
+RUN cd $CKAN_EXTENSIONS \
+    && $CKAN_HOME/bin/pip -v -v install --use-feature=2020-resolver -r requirements.txt
+
+RUN cd $CKAN_EXTENSIONS && $CKAN_HOME/bin/pip -v -v install --use-feature=2020-resolver -r indirect-requirements.txt
+
+#add the patches
+ADD ./core-patches-2.7.10 /usr/lib/ckan/default/src/ckan/core-patches-2.7.10
+RUN cd /usr/lib/ckan/default/src/ckan && find core-patches-2.7.10 -name '*.patch' | sort | xargs -n 1 patch -p1 -i
+
+ADD glyphicons.tgz ./ckan/public/base/vendor/bootstrap
+
 # http://serverfault.com/a/711172
 # get apache logs in docker-compose logs ckan
 RUN ln -sf /proc/self/fd/1 /var/log/apache2/ckan_default.custom.log && \

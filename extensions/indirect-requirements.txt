@@ -1,0 +1,3 @@
+-r /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
+-r /usr/lib/ckan/default/src/ckanext-dcat/requirements.txt
+-r /usr/lib/ckan/default/src/ckanext-s3filestore/requirements.txt
