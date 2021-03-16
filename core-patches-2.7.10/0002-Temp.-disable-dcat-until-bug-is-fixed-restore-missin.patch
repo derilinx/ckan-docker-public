@@ -1,0 +1,29 @@
+From c3ce7db5618aeb57a60535584c1b797f30884b2f Mon Sep 17 00:00:00 2001
+From: Matt Fullerton <matt.fullerton@gmail.com>
+Date: Wed, 31 Jan 2018 16:20:03 +0000
+Subject: [PATCH 2/9] Temp. disable dcat until bug is fixed, restore missing
+ dataset-type-respecting change from ckan core
+
+---
+ ckan/controllers/package.py | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/ckan/controllers/package.py b/ckan/controllers/package.py
+index ef2a382f6..1499f24a7 100644
+--- a/ckan/controllers/package.py
++++ b/ckan/controllers/package.py
+@@ -162,8 +162,9 @@ class PackageController(base.BaseController):
+ 
+         def remove_field(key, value=None, replace=None):
+             return h.remove_url_param(key, value=value, replace=replace,
+-                                      controller='package', action='search')
+-
++                                      controller='package', action='search',
++                                      alternative_url=package_type)
++                                      
+         c.remove_field = remove_field
+ 
+         sort_by = request.params.get('sort', None)
+-- 
+2.21.1 (Apple Git-122.3)
+

@@ -1,0 +1,26 @@
+From 0336a8d0e7f95ff5acad7c9396bd4c34622c3b6a Mon Sep 17 00:00:00 2001
+From: Eric Soroos <eric@derilinx.com>
+Date: Mon, 5 Nov 2018 13:35:55 +0000
+Subject: [PATCH 18/18] Remove translation, fixes
+ https://github.com/NRGI/resourcedata.org/issues/250
+
+---
+ .../ckanext/datatablesview/templates/datatables/datatables_view.html    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ckanext/datatablesview/templates/datatables/datatables_view.html b/ckanext/datatablesview/templates/datatables/datatables_view.html
+index 0d20f3f..9c00255 100644
+--- a/ckanext/datatablesview/templates/datatables/datatables_view.html
++++ b/ckanext/datatablesview/templates/datatables/datatables_view.html
+@@ -25,7 +25,7 @@
+       data-buttons='[
+         {
+           "extend": "colvis",
+-          "text": "{{ _('Hide/Unhide Columns') }}"
++          "text": "Hide/Unhide Columns"
+         }{{ ', "copy", "excel", "print"' | safe
+           if resource_view.get('export_buttons') else ''}}
+         ]'
+-- 
+2.7.4
+

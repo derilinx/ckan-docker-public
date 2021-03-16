@@ -1,0 +1,312 @@
+From 4dc50e2e3c16480d7933fecfbc954ff0d2fac75f Mon Sep 17 00:00:00 2001
+From: Eric Soroos <eric@derilinx.com>
+Date: Tue, 12 Jun 2018 12:36:27 +0000
+Subject: [PATCH 16/18] followed datasets tab in on the user page
+
+---
+ ckan-home/ckan/config/routing.py                   |   2 +
+ ckan-home/ckan/controllers/user.py                 |  24 +++
+ .../ckan/public/base/javascript/modules/follow.js  | 178 ++++++++++-----------
+ .../ckan/templates/user/followed_datasets.html     |  24 +++
+ ckan-home/ckan/templates/user/read_base.html       |   1 +
+ ckan-home/ckan/templates/user/saved_search.html    |   2 +-
+ 6 files changed, 141 insertions(+), 90 deletions(-)
+ create mode 100644 ckan-home/ckan/templates/user/followed_datasets.html
+
+diff --git a/ckan/config/routing.py b/ckan/config/routing.py
+index 0d29a9c..b6e3cef 100644
+--- a/ckan/config/routing.py
++++ b/ckan/config/routing.py
+@@ -366,6 +366,8 @@ def make_map():
+                   action='activity', ckan_icon='clock-o')
+         m.connect('user_saved_search', '/user/saved_search/{id}',
+                   action='saved_search', ckan_icon='search')
++        m.connect('user_followed_datasets', '/user/followed_datasets/{id}',
++                  action='followed_datasets', ckan_icon='sitemap')
+         m.connect('user_dashboard', '/dashboard', action='dashboard',
+                   ckan_icon='list')
+         m.connect('user_dashboard_datasets', '/dashboard/datasets',
+diff --git a/ckan/controllers/user.py b/ckan/controllers/user.py
+index 8b4031e..626f31c 100644
+--- a/ckan/controllers/user.py
++++ b/ckan/controllers/user.py
+@@ -621,6 +621,30 @@ class UserController(base.BaseController):
+ 
+         return render('user/saved_search.html')
+ 
++    def followed_datasets(self, id, offset=0):
++        '''Render this user's followed datasets.'''
++
++        context = {'model': model, 'session': model.Session,
++                   'user': c.user, 'auth_user_obj': c.userobj,
++                   'for_view': True}
++        data_dict = {'id': id, 'user_obj': c.userobj,
++                     'include_num_followers': True}
++        try:
++            check_access('user_show', context, data_dict)
++        except NotAuthorized:
++            abort(403, _('Not authorized to see this page'))
++
++        self._setup_template_variables(context, data_dict)
++
++
++        followed_items = get_action('followee_list')(
++                context, {'id': c.user_dict['id']})
++
++        c.followed_datasets = [d for d in followed_items
++                               if d.get('type') == 'dataset']
++        
++        return render('user/followed_datasets.html')
++    
+     def _get_dashboard_context(self, filter_type=None, filter_id=None, q=None):
+         '''Return a dict needed by the dashboard view to determine context.'''
+ 
+diff --git a/ckan/public/base/javascript/modules/follow.js b/ckan/public/base/javascript/modules/follow.js
+index 1905c4a..be01cfe 100644
+--- a/ckan/public/base/javascript/modules/follow.js
++++ b/ckan/public/base/javascript/modules/follow.js
+@@ -12,97 +12,97 @@
+  *
+  */
+ this.ckan.module('follow', function($) {
+-	return {
+-		/* options object can be extended using data-module-* attributes */
+-		options : {
+-			action: null,
+-			type: null,
+-			id: null,
+-			loading: false
+-		},
++    return {
++        /* options object can be extended using data-module-* attributes */
++        options : {
++            action: null,
++            type: null,
++            id: null,
++            loading: false
++        },
+ 
+-		/* Initialises the module setting up elements and event listeners.
+-		 *
+-		 * Returns nothing.
+-		 */
+-		initialize: function () {
+-			$.proxyAll(this, /_on/);
+-			this.el.on('click', this._onClick);
+-		},
++        /* Initialises the module setting up elements and event listeners.
++         *
++         * Returns nothing.
++         */
++        initialize: function () {
++            $.proxyAll(this, /_on/);
++            this.el.on('click', this._onClick);
++        },
+ 
+-		/* Handles the clicking of the follow button
+-		 *
+-		 * event - An event object.
+-		 *
+-		 * Returns nothing.
+-		 */
+-		_onClick: function(event) {
+-			var options = this.options;
+-			if (
+-				options.action
+-				&& options.type
+-				&& options.id
+-				&& !options.loading
+-			) {
+-				event.preventDefault();
+-				var client = this.sandbox.client;
+-				var path = options.action + '_' + options.type;
+-				options.loading = true;
+-				this.el.addClass('disabled');
+-				client.call('POST', path, { id : options.id }, this._onClickLoaded, this._onClickFailed);
+-			}
+-		},
++        /* Handles the clicking of the follow button
++         *
++         * event - An event object.
++         *
++         * Returns nothing.
++         */
++        _onClick: function(event) {
++            var options = this.options;
++            if (
++                options.action
++                && options.type
++                && options.id
++                && !options.loading
++            ) {
++                event.preventDefault();
++                var client = this.sandbox.client;
++                var path = options.action + '_' + options.type;
++                options.loading = true;
++                this.el.addClass('disabled');
++                client.call('POST', path, { id : options.id }, this._onClickLoaded, this._onClickFailed);
++            }
++        },
+ 
+-		/* Fired after the call to the API to either follow or unfollow
+-		 *
+-		 * json - The return json from the follow / unfollow API call
+-		 *
+-		 * Returns nothing.
+-		 */
+-		_onClickLoaded: function(json) {
+-			var options = this.options;
+-			var sandbox = this.sandbox;
+-			var oldAction = options.action;
+-			options.loading = false;
+-			this.el.removeClass('disabled');
+-                        /* We don't try to detect whether searches are already followed; maintain this UX here */
+-                        if (options.type != 'search') { 
+-			  if (options.action == 'follow') {
+-			      	options.action = 'unfollow';
+-				this.el.html('<i class="fa fa-times-circle"></i> ' + this._('Unfollow')).removeClass('btn-success').addClass('btn-danger');
+-			  } else {
+-				options.action = 'follow';
+-				this.el.html('<i class="fa fa-plus-circle"></i> ' + this._('Follow')).removeClass('btn-danger').addClass('btn-success');
+-			  }
+-                        }
+-                        else {
+-                          if (options.action == 'follow') {
+-                                $('.flash-messages').append('<div class=\"alert fade in alert-info\">' + this._('Saved search') + ' <a class=\"close\" href=\"#\">&#215;</a></div>');
+-                          } else {
+-                                $('#' + options.id).remove();
+-                          }
+-                        }
+-			sandbox.publish('follow-' + oldAction + '-' + options.id);
+-		},
++        /* Fired after the call to the API to either follow or unfollow
++         *
++         * json - The return json from the follow / unfollow API call
++         *
++         * Returns nothing.
++         */
++        _onClickLoaded: function(json) {
++            var options = this.options;
++            var sandbox = this.sandbox;
++            var oldAction = options.action;
++            options.loading = false;
++            this.el.removeClass('disabled');
++            /* We don't try to detect whether searches are already followed; maintain this UX here */
++            if (options.type == 'search' || options.context == 'list') { 
++              if (options.action == 'follow') {
++                $('.flash-messages').append('<div class=\"alert fade in alert-info\">' + this._('Saved search') + ' <a class=\"close\" href=\"#\">&#215;</a></div>');
++              } else {
++                $('#' + options.id).remove();
++              }
++            }
++            else {
++              if (options.action == 'follow') {
++                options.action = 'unfollow';
++                this.el.html('<i class="fa fa-times-circle"></i> ' + this._('Unfollow')).removeClass('btn-success').addClass('btn-danger');
++              } else {
++                options.action = 'follow';
++                this.el.html('<i class="fa fa-plus-circle"></i> ' + this._('Follow')).removeClass('btn-danger').addClass('btn-success');
++              }
++            }
++            sandbox.publish('follow-' + oldAction + '-' + options.id);
++        },
+ 
+-                /* Fired if the call to the API failed
+-                 *
+-                 * json - The return json from the follow / unfollow API call
+-                 *
+-                 * Returns nothing.
+-                 */
+-                _onClickFailed: function(json) {
+-                        var options = this.options;
+-                        var sandbox = this.sandbox;
+-                        var oldAction = options.action;
+-                        options.loading = false;
+-                        this.el.removeClass('disabled');
+-                        if (options.type == 'search' && (json.responseJSON.error.search_string || json.responseJSON.error.follower)) {
+-                          errorText = (json.responseJSON.error.search_string || json.responseJSON.error.follower)[0];
+-                        }
+-                        else errorText = json.statusText;
+-                        $('.flash-messages').append('<div class=\"alert fade in alert-error\">' + this._('Follow') + ' ' + this._(options.type) + ' ' + this._('failed') + ': ' + errorText + '<a class=\"close\" href=\"#\">&#215;</a></div>');
+-                        sandbox.publish('follow-' + oldAction + '-' + options.id);
+-                }
+-	};
++        /* Fired if the call to the API failed
++         *
++         * json - The return json from the follow / unfollow API call
++         *
++         * Returns nothing.
++         */
++        _onClickFailed: function(json) {
++            var options = this.options;
++            var sandbox = this.sandbox;
++            var oldAction = options.action;
++            options.loading = false;
++            this.el.removeClass('disabled');
++            if (options.type == 'search' && (json.responseJSON.error.search_string || json.responseJSON.error.follower)) {
++              errorText = (json.responseJSON.error.search_string || json.responseJSON.error.follower)[0];
++            }
++            else errorText = json.statusText;
++            $('.flash-messages').append('<div class=\"alert fade in alert-error\">' + this._('Follow') + ' ' + this._(options.type) + ' ' + this._('failed') + ': ' + errorText + '<a class=\"close\" href=\"#\">&#215;</a></div>');
++            sandbox.publish('follow-' + oldAction + '-' + options.id);
++        }
++    };
+ });
+diff --git a/ckan/templates/user/followed_datasets.html b/ckan/templates/user/followed_datasets.html
+new file mode 100644
+index 0000000..efb2cfb
+--- /dev/null
++++ b/ckan/templates/user/followed_datasets.html
+@@ -0,0 +1,24 @@
++{% extends "user/read.html" %}
++
++{% block subtitle %}{{ _('Followed Datasets') }} - {{ super() }}{% endblock %}
++
++{% block primary_content_inner %}
++  <h2 class="hide-heading">{% block page_heading %}{{ _('Followed Datasets') }}{% endblock %}</h2>
++  <ul class="activity">
++  {% for dataset in c.followed_datasets %}
++    <li class="item new-package" id="{{ dataset.dict.id }}">
++      <i class="fa icon fa-sitemap"></i>
++      <div class="actor">
++	<a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="dataset" data-module-id="{{ dataset.dict.id }}" data-module-action="unfollow" data-module-context="list">&nbsp;<i class="fa fa-trash"></i></a>
++      </div>
++      <p>&nbsp;
++      <a href="/dataset/{{ dataset.dict.name  }}">{{ dataset.display_name }}</a>
++        <span class="date">
++          {% if dataset.dict.metadata_modified %}
++            Last Modified: {{ dataset.dict.metadata_modified.split('T')[0] }}
++	  {% endif %}
++        </span>
++      </p>
++    </li>
++  {% endfor %}
++{% endblock %}
+diff --git a/ckan/templates/user/read_base.html b/ckan/templates/user/read_base.html
+index 7d4cde5..02940b1 100644
+--- a/ckan/templates/user/read_base.html
++++ b/ckan/templates/user/read_base.html
+@@ -20,6 +20,7 @@
+   {{ h.build_nav_icon('user_activity_stream', _('Activity Stream'), id=user.name) }}
+   {% if h.follow_searches_available() %}
+     {{ h.build_nav_icon('user_saved_search', _('Saved Searches'), id=user.name) }}
++    {{ h.build_nav_icon('user_followed_datasets', _('Followed Datasets'), id=user.name) }}
+   {% endif %}
+ {% endblock %}
+ 
+diff --git a/ckan/templates/user/saved_search.html b/ckan/templates/user/saved_search.html
+index cb7a93d..3818e29 100644
+--- a/ckan/templates/user/saved_search.html
++++ b/ckan/templates/user/saved_search.html
+@@ -9,7 +9,7 @@
+     <li class="item new-package" id="{{ search.id }}">
+       <i class="fa icon fa-search"></i>
+       <div class="actor">
+-      <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow">&nbsp;<i class="fa fa-trash"></i></a>
++        <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow" data-module-context="list">&nbsp;<i class="fa fa-trash"></i></a>
+       </div>
+       <p>&nbsp;
+       <a href="{{ search.search_url_in_ckan }}">{{ search.search_anchor_text | truncate(75) }}</a>
+-- 
+2.7.4
+

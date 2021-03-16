@@ -1,0 +1,25 @@
+From e78986b87399f33368ae3d02d31311e9404eac3b Mon Sep 17 00:00:00 2001
+From: Eric Soroos <eric@derilinx.com>
+Date: Tue, 12 Jun 2018 10:19:05 +0000
+Subject: [PATCH 14/18] add the query into the querystring
+
+---
+ ckan-home/ckan/lib/dictization/model_dictize.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ckan/lib/dictization/model_dictize.py b/ckan/lib/dictization/model_dictize.py
+index 9d48704..3e93cb1 100644
+--- a/ckan/lib/dictization/model_dictize.py
++++ b/ckan/lib/dictization/model_dictize.py
+@@ -139,7 +139,7 @@ def saved_search_list_dictize(search_list, context):
+         reconstruct_search['base'] = h.url_for(controller='package', action='search')
+         reconstruct_search['end'] = ""
+         for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
+-            if param not in ['q', 'page', 'sort'] \
++            if param not in ['page', 'sort'] \
+                     and len(value) and not param.startswith('_'):
+                 reconstruct_search['end'] += param + "=" + value + "&"
+             elif param == '_search_organization' and value != '0':
+-- 
+2.7.4
+

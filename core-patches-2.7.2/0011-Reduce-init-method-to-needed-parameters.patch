@@ -1,0 +1,35 @@
+From 762efcf6d83ffd295f1684e6c0afb675fd4fb44e Mon Sep 17 00:00:00 2001
+From: Matt Fullerton <matt.fullerton@gmail.com>
+Date: Thu, 1 Feb 2018 21:45:40 +0000
+Subject: [PATCH 11/18] Reduce init method to needed parameters
+
+---
+ ckan-home/ckan/model/saved_search.py | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/ckan/model/saved_search.py b/ckan/model/saved_search.py
+index d290bf3..8ca251d 100644
+--- a/ckan/model/saved_search.py
++++ b/ckan/model/saved_search.py
+@@ -25,14 +25,13 @@ __all__ = ['SavedSearch', 'saved_search_table']
+ 
+ class SavedSearch(domain_object.DomainObject):
+ 
+-    def __init__(self, user_id, search_string, id = None, last_results = [], last_run = None):
+-        if id is None:
+-            self.id = _types.make_uuid()
++    def __init__(self, user_id, search_string):
++        self.id = _types.make_uuid()
+         self.timestamp = datetime.datetime.utcnow()
+         self.user_id = user_id
+-        self.last_run = last_run
++        self.last_run = None
+         self.search_string = search_string
+-        self.last_results = last_results
++        self.last_results = []
+ 
+ saved_search_table = Table(
+     'saved_search', meta.metadata,
+-- 
+2.7.4
+

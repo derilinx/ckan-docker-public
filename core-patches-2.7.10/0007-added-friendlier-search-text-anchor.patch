@@ -1,0 +1,74 @@
+From cb32168a08f653193121ddab5bd8b47d6a9d3247 Mon Sep 17 00:00:00 2001
+From: Eric Soroos <eric@derilinx.com>
+Date: Tue, 12 Jun 2018 11:06:29 +0000
+Subject: [PATCH 7/9] added friendlier search text anchor
+
+---
+ ckan/lib/dictization/model_dictize.py | 15 +++++++++++++--
+ ckan/templates/user/saved_search.html |  2 +-
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/ckan/lib/dictization/model_dictize.py b/ckan/lib/dictization/model_dictize.py
+index 5ee045fc1..81986c1f4 100644
+--- a/ckan/lib/dictization/model_dictize.py
++++ b/ckan/lib/dictization/model_dictize.py
+@@ -13,6 +13,7 @@ which builds the dictionary by iterating over the table columns.
+ '''
+ import datetime
+ import urlparse
++import urllib
+ 
+ from ckan.common import config
+ from sqlalchemy.sql import select
+@@ -133,10 +134,17 @@ def saved_search_list_dictize(search_list, context):
+         return res
+ 
+     result_list = []
++    param_map = {'category': 'Category',
++                 'country': 'Country',
++                 'res_format': 'Resource Format',
++                 'q': 'Query',
++                 'fq': 'Facet Query',
++                 }
+     for search in search_list:
+         search_dict = saved_search_dictize(search, context)
+ 
+         reconstruct_search = {}
++        search_anchor = []
+         reconstruct_search['base'] = h.url_for(controller='package', action='search')
+         reconstruct_search['end'] = ""
+         for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
+@@ -150,12 +158,15 @@ def saved_search_list_dictize(search_list, context):
+             elif param == '_search_package_type' and value != '0':
+                 package_type = value
+                 reconstruct_search['base'] = h.url_for(controller='package', action='search').replace('/dataset', '/' + package_type)
+-
++            if param in ('q', 'fq', 'category', 'res_format', 'country'):
++                search_anchor.append("%s: %s"%(param_map[param], urllib.unquote(value)))
++                                
+         if len(reconstruct_search['end']) > 0:
+             reconstruct_search['end'] = reconstruct_search['end'][0:len(reconstruct_search['end'])-1]
+ 
+         search_dict['search_url_in_ckan'] = reconstruct_search['base'] + "?" + reconstruct_search['end'] 
+-
++        search_dict['search_anchor_text'] = ", ".join(search_anchor) or "Blank"
++        
+         result_list.append(search_dict)
+ 
+     return sorted(result_list, key=lambda x: x["timestamp"])
+diff --git a/ckan/templates/user/saved_search.html b/ckan/templates/user/saved_search.html
+index cea254786..cb7a93da5 100644
+--- a/ckan/templates/user/saved_search.html
++++ b/ckan/templates/user/saved_search.html
+@@ -12,7 +12,7 @@
+       <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow">&nbsp;<i class="fa fa-trash"></i></a>
+       </div>
+       <p>&nbsp;
+-      <a href="{{ search.search_url_in_ckan }}">{{ search.search_url_in_ckan | truncate(75) }}</a>
++      <a href="{{ search.search_url_in_ckan }}">{{ search.search_anchor_text | truncate(75) }}</a>
+         <span class="date">
+           {% if search.last_run %}
+             {{ search.last_results | count }} {{ _('result(s)') }}
+-- 
+2.21.1 (Apple Git-122.3)
+

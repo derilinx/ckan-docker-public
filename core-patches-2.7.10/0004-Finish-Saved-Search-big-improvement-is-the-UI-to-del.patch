@@ -1,0 +1,859 @@
+From de6743c7b5b422cdd2f8c0cf2dd01e0728e33b20 Mon Sep 17 00:00:00 2001
+From: Matt Fullerton <matt.fullerton@gmail.com>
+Date: Wed, 7 Feb 2018 15:12:29 +0000
+Subject: [PATCH 4/9] Finish Saved Search - big improvement is the UI to delete
+ searches
+
+---
+ ckan/config/deployment.ini_tmpl               |  3 +-
+ ckan/config/routing.py                        |  4 +-
+ ckan/controllers/package.py                   | 23 +--------
+ ckan/controllers/user.py                      | 20 ++++++++
+ ckan/lib/dictization/model_dictize.py         | 33 +++++++++++--
+ ckan/lib/email_notifications.py               | 46 +++++++-----------
+ ckan/lib/helpers.py                           | 31 +++++++++---
+ ckan/logic/action/create.py                   | 40 ++++++++--------
+ ckan/logic/action/delete.py                   | 48 ++++++++++++++++++-
+ ckan/logic/action/get.py                      | 24 ++++++++++
+ ckan/logic/action/update.py                   |  2 +-
+ ckan/model/saved_search.py                    | 25 ++++++++++
+ ckan/public/base/css/main.css                 |  3 ++
+ ckan/public/base/javascript/modules/follow.js | 43 ++++++++++++++---
+ ckan/public/base/less/activity.less           |  2 +-
+ .../base/vendor/bootstrap/less/buttons.less   |  6 +++
+ .../activity_stream_email_notifications.text  |  1 +
+ .../saved_searches_email_notifications.text   |  2 +-
+ ckan/templates/snippets/follow_button.html    |  7 ++-
+ ckan/templates/snippets/search_form.html      |  8 +++-
+ ckan/templates/user/read_base.html            |  3 ++
+ ckan/templates/user/saved_search.html         | 26 ++++++++++
+ 22 files changed, 303 insertions(+), 97 deletions(-)
+ create mode 100644 ckan/templates/user/saved_search.html
+
+diff --git a/ckan/config/deployment.ini_tmpl b/ckan/config/deployment.ini_tmpl
+index fe59cdb0f..04d00c677 100644
+--- a/ckan/config/deployment.ini_tmpl
++++ b/ckan/config/deployment.ini_tmpl
+@@ -174,7 +174,8 @@ ckan.feeds.author_link =
+ #ckan.activity_streams_email_notifications = true
+ #ckan.email_notifications_since = 2 days
+ ckan.hide_activity_from_users = %(ckan.site_id)s
+-
++#ckan.follow_searches_enabled = false
++#ckan.follow_searches_max_number = 20
+ 
+ ## Email settings
+ 
+diff --git a/ckan/config/routing.py b/ckan/config/routing.py
+index 38f17de6a..9022a9246 100644
+--- a/ckan/config/routing.py
++++ b/ckan/config/routing.py
+@@ -232,11 +232,9 @@ def make_map():
+                       'read_ajax',
+                       'history_ajax',
+                       'follow',
+-                      'follow_search',
+                       'activity',
+                       'groups',
+                       'unfollow',
+-                      'unfollow_search',
+                       'delete',
+                       'api_data',
+                   ])))
+@@ -366,6 +364,8 @@ def make_map():
+         m.connect('/user/activity/{id}/{offset}', action='activity')
+         m.connect('user_activity_stream', '/user/activity/{id}',
+                   action='activity', ckan_icon='clock-o')
++        m.connect('user_saved_search', '/user/saved_search/{id}',
++                  action='saved_search', ckan_icon='search')
+         m.connect('user_dashboard', '/dashboard', action='dashboard',
+                   ckan_icon='list')
+         m.connect('user_dashboard_datasets', '/dashboard/datasets',
+diff --git a/ckan/controllers/package.py b/ckan/controllers/package.py
+index 1499f24a7..c6653c96a 100644
+--- a/ckan/controllers/package.py
++++ b/ckan/controllers/package.py
+@@ -162,9 +162,8 @@ class PackageController(base.BaseController):
+ 
+         def remove_field(key, value=None, replace=None):
+             return h.remove_url_param(key, value=value, replace=replace,
+-                                      controller='package', action='search',
+-                                      alternative_url=package_type)
+-                                      
++                                      controller='package', action='search')
++
+         c.remove_field = remove_field
+ 
+         sort_by = request.params.get('sort', None)
+@@ -1225,24 +1224,6 @@ class PackageController(base.BaseController):
+         return render('package/followers.html',
+                       {'dataset_type': dataset_type})
+ 
+-    def follow_search(self, search_string):
+-        '''Start following these search results.'''
+-        context = {'model': model,
+-                   'session': model.Session,
+-                   'user': c.user}
+-        data_dict = {'search_string': search_string}
+-        #try:
+-        #TODO get_action('follow_search')(context, data_dict)
+-        #TODO show summary of search?
+-        h.flash_success(_("You are now following this search"))
+-        #except ValidationError as e:
+-        #    error_message = (e.message or e.error_summary
+-        #                     or e.error_dict)
+-        #    h.flash_error(error_message)
+-        #except NotAuthorized as e:
+-        #    h.flash_error(e.message)
+-        h.redirect_to(controller='user', action='activity', id=c.user.id)
+-
+     def groups(self, id):
+         context = {'model': model, 'session': model.Session,
+                    'user': c.user, 'for_view': True,
+diff --git a/ckan/controllers/user.py b/ckan/controllers/user.py
+index c1ec33280..0678e6b28 100644
+--- a/ckan/controllers/user.py
++++ b/ckan/controllers/user.py
+@@ -611,6 +611,26 @@ class UserController(base.BaseController):
+ 
+         return render('user/activity_stream.html')
+ 
++    def saved_search(self, id, offset=0):
++        '''Render this user's saved_searches.'''
++
++        context = {'model': model, 'session': model.Session,
++                   'user': c.user, 'auth_user_obj': c.userobj,
++                   'for_view': True}
++        data_dict = {'id': id, 'user_obj': c.userobj,
++                     'include_num_followers': True}
++        try:
++            check_access('user_show', context, data_dict)
++        except NotAuthorized:
++            abort(403, _('Not authorized to see this page'))
++
++        self._setup_template_variables(context, data_dict)
++
++        c.searches = get_action('user_saved_search_list')(
++                context, {'id': c.user_dict['id']})
++
++        return render('user/saved_search.html')
++
+     def _get_dashboard_context(self, filter_type=None, filter_id=None, q=None):
+         '''Return a dict needed by the dashboard view to determine context.'''
+ 
+diff --git a/ckan/lib/dictization/model_dictize.py b/ckan/lib/dictization/model_dictize.py
+index bff885dfe..45affc341 100644
+--- a/ckan/lib/dictization/model_dictize.py
++++ b/ckan/lib/dictization/model_dictize.py
+@@ -123,10 +123,39 @@ def resource_dictize(res, context):
+ 
+ def saved_search_list_dictize(search_list, context):
+ 
++    def _make_parameters(query_string):
++        parts = query_string.split("&")
++        res = []
++        for part in parts:
++            s = part.split("=")
++            if len(s) > 1:
++                res.append((s[0], s[1]))
++        return res
++
+     result_list = []
+     for search in search_list:
+         search_dict = saved_search_dictize(search, context)
+ 
++        reconstruct_search = {}
++        reconstruct_search['base'] = h.url_for(controller='package', action='search')
++        reconstruct_search['end'] = ""
++        for (param, value) in _make_parameters(search_dict['search_string'].replace("?","")):
++            if param not in ['q', 'page', 'sort'] \
++                    and len(value) and not param.startswith('_'):
++                reconstruct_search['end'] += param + "=" + value + "&"
++            elif param == '_search_organization' and value != '0':
++                reconstruct_search['base'] = h.url_for(controller='organization', action='read', id=value)
++            elif param == '_search_group' and value != '0':
++                reconstruct_search['base'] = h.url_for(controller='group', action='read', id=value)
++            elif param == '_search_package_type' and value != '0':
++                package_type = value
++                reconstruct_search['base'] = h.url_for(controller='package', action='search').replace('/dataset', '/' + package_type)
++
++        if len(reconstruct_search['end']) > 0:
++            reconstruct_search['end'] = reconstruct_search['end'][0:len(reconstruct_search['end'])-1]
++
++        search_dict['search_url_in_ckan'] = reconstruct_search['base'] + "?" + reconstruct_search['end'] 
++
+         result_list.append(search_dict)
+ 
+     return sorted(result_list, key=lambda x: x["timestamp"])
+@@ -768,10 +797,6 @@ def user_following_dataset_dictize(follower, context):
+ def user_following_group_dictize(follower, context):
+     return d.table_dictize(follower, context)
+ 
+-def user_following_search_dictize(search_string, follower, context):
+-    #TODO - take from DB
+-    return {"follower_id": follower, "search_string": search_string}
+-
+ def resource_view_dictize(resource_view, context):
+     dictized = d.table_dictize(resource_view, context)
+     dictized.pop('order')
+diff --git a/ckan/lib/email_notifications.py b/ckan/lib/email_notifications.py
+index a50feafd0..61f24b6bf 100644
+--- a/ckan/lib/email_notifications.py
++++ b/ckan/lib/email_notifications.py
+@@ -9,6 +9,7 @@ users.
+ import datetime
+ import re
+ import logging
++import urllib2
+ 
+ import ckan.model as model
+ import ckan.logic as logic
+@@ -156,15 +157,10 @@ def _make_parameters(query_string):
+     for part in parts:
+         s = part.split("=")
+         if len(s) > 1:
+-            res.append((s[0], s[1]))
++            res.append((s[0], urllib2.unquote(s[1].replace("+", " "))))
+     return res
+ 
+ def _notifications_from_saved_searches(user_dict, since):
+-    def make_url(parts):
+-        #Get rid of last & - but there really should always be at least one param... so not necessary
+-        if len(parts['end']) > 0:
+-            parts['end'] = parts['end'][0:len(parts['end'])-1]
+-        return parts['base'] + "?" + parts['end']
+     # Note we ignore "since" here as we aren't going to
+     # look at when the search changed
+     context = {'model': model, 'session': model.Session,
+@@ -175,18 +171,16 @@ def _notifications_from_saved_searches(user_dict, since):
+     search_list = model_dictize.saved_search_list_dictize(_search_list, context)
+     activity_list = []
+     for search in search_list:
+-        #save link to search (needed for activity later)
+-        try:
++        # Here we also build a link to search (needed for email later)
++        # FIXME: Put this into a function so that the listing of searches can also do it
++        if True:
+             if True:
+                 fq = ''
+                 q = ''
+                 search_extras = {}
+-                reconstruct_search = {}
+-                reconstruct_search['end'] = ""
+                 for (param, value) in _make_parameters(search['search_string'].replace("?","")):
+                     if param not in ['q', 'page', 'sort'] \
+                             and len(value) and not param.startswith('_'):
+-                        reconstruct_search['end'] += param + "=" + value + "&" 
+                         if not param.startswith('ext_'):
+                             if param == "organization":
+                                 param = "owner_org"
+@@ -197,19 +191,16 @@ def _notifications_from_saved_searches(user_dict, since):
+                         q = value
+                     elif param == '_search_organization' and value != '0':
+                         fq += ' owner_org:%s' % (value)
+-                        reconstruct_search['base'] = h.url_for(controller='organization', action='read', id=value, qualified=True)
+                     elif param == '_search_group' and value != '0':
+                         fq += ' groups:%s' % (value)
+-                        reconstruct_search['base'] = h.url_for(controller='group', action='read', id=value, qualified=True)
+                     elif param == '_search_package_type' and value != '0':
+                         package_type = value
+                         type_is_search_all = h.type_is_search_all(package_type)
+-                        reconstruct_search['base'] = h.url_for(controller='package', action='search', package_type=value, qualified=True)
+ 
+                         if not type_is_search_all:
+                         # Only show datasets of this particular type
+                             fq += ' +dataset_type:{type}'.format(type=package_type)
+-                
++
+                 data_dict = {
+                     'q': q,
+                     'fq': fq.strip(),
+@@ -226,17 +217,18 @@ def _notifications_from_saved_searches(user_dict, since):
+                 if search['last_run']:
+                     last_ids = search['last_results']
+                     last_ids = set(last_ids)
+-                    difference = len(ids - last_ids);
++                    difference = len(ids - last_ids)
++                    # If there's a difference in result lists
+                     if difference > 0: 
+-                        activity = {'data': {'search_url': make_url(reconstruct_search), 'activity_type': 'search_results_changed'}}
++                        activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_changed'}}
+                         activity_list.append(activity)
+                     else:
+-                        # For each result, ceheck if metmod more than last run, then break zes
++                        # If any result updated
+                         resultchange = False
+                         for result in query['results']:
+                             fmt = '%Y-%m-%dT%H:%M:%S.%f'
+                             if datetime.datetime.strptime(result['metadata_modified'], fmt) >  datetime.datetime.strptime(search['last_run'], fmt):
+-                                activity = {'data': {'search_url': make_url(reconstruct_search), 'activity_type': 'search_results_updated'}}
++                                activity = {'data': {'search_url': config.get('ckan.site_url') + search['search_url_in_ckan'], 'activity_type': 'search_results_updated'}}
+                                 activity_list.append(activity)
+                                 break
+             
+@@ -248,16 +240,14 @@ def _notifications_from_saved_searches(user_dict, since):
+                 if not context.get('defer_commit'):
+                     model.repo.commit()
+             
+-        except SearchQueryError, se:
+-            # FIXME: Ideally, tell user about this so they can delete/edit
+-            log.error('Dataset search query rejected: %r', se.args)
+-        except SearchError, se:
+-            # FIXME: Ideally, tell user about this so they can delete/edit/inform admin
+-            log.error('Dataset search error: %r', se.args) 
++        #except SearchQueryError, se:
++        #    # FIXME: Ideally, tell user about this so they can delete/edit
++        #    log.error('Dataset search query rejected: %r', se.args)
++        #except SearchError, se:
++        #    # FIXME: Ideally, tell user about this so they can delete/edit/inform admin
++        #    log.error('Dataset search error: %r', se.args) 
+ 
+     return _notifications_for_saved_searches(activity_list, user_dict)
+-    #TODO Make results look like activities
+-    #TODO undo return stuff everywhere
+ 
+ def _notifications_from_dashboard_activity_list(user_dict, since):
+     '''Return any email notifications from the given user's dashboard activity
+@@ -283,8 +273,6 @@ def _notifications_from_dashboard_activity_list(user_dict, since):
+     return _notifications_for_activities(activity_list, user_dict)
+ 
+ 
+-
+-
+ # A list of functions that provide email notifications for users from different
+ # sources. Add to this list if you want to implement a new source of email
+ # notifications.
+diff --git a/ckan/lib/helpers.py b/ckan/lib/helpers.py
+index 4d9275c37..87527a5ad 100644
+--- a/ckan/lib/helpers.py
++++ b/ckan/lib/helpers.py
+@@ -1504,17 +1504,19 @@ def convert_to_dict(object_type, objs):
+ 
+ 
+ # these are the types of objects that can be followed
+-_follow_objects = ['dataset', 'user', 'group', 'search']
++_follow_objects = ['dataset', 'user', 'group', 'search', 'disabled']
+ 
+ 
+ @core_helper
+-def follow_button(obj_type, obj_id):
++def follow_button(obj_type, obj_id, reason=""):
+     '''Return a follow button for the given object type and id.
+ 
+     If the user is not logged in return an empty string instead.
+ 
+     :param obj_type: the type of the object to be followed when the follow
+-        button is clicked, e.g. 'user' or 'dataset'
++        button is clicked, e.g. 'user' or 'dataset'; setting to 'disabled'
++        will show the button in disabled state and use the "reason" parameter
++        as a title
+     :type obj_type: string
+     :param obj_id: the id of the object to be followed when the follow button
+         is clicked
+@@ -1525,18 +1527,28 @@ def follow_button(obj_type, obj_id):
+ 
+     '''
+     obj_type = obj_type.lower()
++    disabled = False
+     assert obj_type in _follow_objects
+     # If the user is logged in show the follow/unfollow button
+     if c.user:
+         context = {'model': model, 'session': model.Session, 'user': c.user}
++        title = None
+         following = False
+-        if obj_type != 'search':
++        if obj_type not in ['search', 'disabled']:
+             action = 'am_following_%s' % obj_type
+             following = logic.get_action(action)(context, {'id': obj_id})
++        elif obj_type == 'disabled':
++            disabled = True
++            title = reason
++        else:
++            title = _('Click here to have changes in the results emailed to '
++                    'you (email alerts must be enabled in your user settings)')
+         return snippet('snippets/follow_button.html',
+                        following=following,
++                       disabled=disabled,
+                        obj_id=obj_id,
+-                       obj_type=obj_type)
++                       obj_type=obj_type,
++                       title=title)
+     return ''
+ 
+ 
+@@ -2419,6 +2431,7 @@ def sanitize_id(id_):
+     '''
+     return str(uuid.UUID(id_))
+ 
++
+ @core_helper
+ def type_is_search_all(package_type):
+     '''Given a package type, ascertains based on config options whether
+@@ -2441,4 +2454,10 @@ def type_is_search_all(package_type):
+         search_all = True
+ 
+     return (search_all and package_type == search_all_type)
+-        
++
++
++@core_helper
++def follow_searches_available():
++    '''Returns based on config options whether following searches is allowed
++    '''
++    return asbool(config.get('ckan.follow_searches_enabled', 'false'))
+diff --git a/ckan/logic/action/create.py b/ckan/logic/action/create.py
+index c2a217780..419b0c57b 100644
+--- a/ckan/logic/action/create.py
++++ b/ckan/logic/action/create.py
+@@ -1395,6 +1395,11 @@ def follow_search(context, data_dict):
+         raise logic.NotAuthorized(
+             _("You must be logged in to follow a search."))
+ 
++    if not paste.deploy.converters.asbool(
++            config.get('ckan.follow_searches_enabled', 'false')):
++        raise logic.NotFound(
++            _("Following searches not supported"))
++
+     model = context['model']
+     session = context['session']
+ 
+@@ -1403,41 +1408,38 @@ def follow_search(context, data_dict):
+         raise logic.NotAuthorized(
+             _("You must be logged in to follow a search."))
+ 
+-    #schema = (context.get('schema')
+-    #          or ckan.logic.schema.default_follow_dataset_schema())
++    follower = userobj.id
+ 
+-    #validated_data_dict, errors = _validate(data_dict, schema, context)
++    _current_search_list = model.saved_search.user_saved_searches_list(follower)
++    current_search_list = model_dictize.saved_search_list_dictize(_current_search_list, context)
++
++    if len(current_search_list) >= int(config.get('ckan.follow_searches_max_number', 20)):
++        errors = {"follower": [_("Maximum number of searches already reached")]}
++        raise ValidationError(errors)
+ 
+     # Allow id instead of search_string to maintain compatibility with
+     # general purpose Javascript module which usually works with object IDs
+     if not (data_dict.get('search_string') or data_dict.get('id')):
+-        errors = {"search_string": ["Not provided and id not found"], "id": ["Not provided and search_string not found"]}
++        errors = {"search_string": [_("Not provided and id not found")], "id": [_("Not provided and search_string not found")]}
+         model.Session.rollback()
+         raise ValidationError(errors)
+ 
+-    # TODO? Check against already existing searchs.
+-    #if model.UserFollowingDataset.is_following(userobj.id,
+-    #                                           validated_data_dict['id']):
+-    #    # FIXME really package model should have this logic and provide
+-    #    # 'display_name' like users and groups
+-    #    pkgobj = model.Package.get(validated_data_dict['id'])
+-    #    name = pkgobj.title or pkgobj.name or pkgobj.id
+-    #    message = _(
+-    #        'You are already following {0}').format(name)
+-    #    raise ValidationError({'message': message}, error_summary=message)
+-
+-    follower = userobj.id
+     search_string = data_dict.get('search_string', data_dict.get('id'))
++    
++    if model.saved_search.saved_search_is_duplicate(follower, search_string):
++        errors = {"search_string": [_("This search is already being followed")]}
++        raise ValidationError(errors)
++
+     sent_data_dict = {"user_id": follower, "search_string": search_string}
+     model_save.saved_search_dict_save(sent_data_dict, context)
+ 
+     if not context.get('defer_commit'):
+         model.repo.commit()
+-
+-    log.debug(u'User {follower} started following search "{search_string}"'.format(
++    
++    log.debug(_('User {follower} started following search "{search_string}"').format(
+         follower=follower, search_string=search_string))
+ 
+-    return model_dictize.user_following_search_dictize(search_string, follower, context)
++    return {"follower_id": follower, "search_string": search_string}
+ 
+ 
+ def _group_or_org_member_create(context, data_dict, is_org=False):
+diff --git a/ckan/logic/action/delete.py b/ckan/logic/action/delete.py
+index f461be9e1..40716e5cb 100644
+--- a/ckan/logic/action/delete.py
++++ b/ckan/logic/action/delete.py
+@@ -5,6 +5,7 @@
+ import logging
+ 
+ import sqlalchemy as sqla
++import paste.deploy.converters
+ 
+ import ckan.lib.jobs as jobs
+ import ckan.logic
+@@ -13,8 +14,7 @@ import ckan.plugins as plugins
+ import ckan.lib.dictization.model_dictize as model_dictize
+ from ckan import authz
+ 
+-from ckan.common import _
+-
++from ckan.common import _, config
+ 
+ log = logging.getLogger('ckan.logic')
+ 
+@@ -644,6 +644,50 @@ def unfollow_dataset(context, data_dict):
+     _unfollow(context, data_dict, schema,
+             context['model'].UserFollowingDataset)
+ 
++def unfollow_search(context, data_dict):
++    '''Stop following a search.
++
++    You must provide your API key in the Authorization header.
++
++    :param id: the id of the saved search
++    :type id: string
++
++    '''
++
++    if 'user' not in context:
++        raise logic.NotAuthorized(
++            _("You must be logged in to follow a search."))
++
++    if not paste.deploy.converters.asbool(
++            config.get('ckan.follow_searches_enabled', 'false')):
++        raise logic.NotFound(
++            _("Following searches not supported"))
++
++    model = context['model']
++    session = context['session']
++
++    userobj = model.User.get(context['user'])
++    if not userobj:
++        raise logic.NotAuthorized(
++            _("You must be logged in to unfollow a search."))
++
++    follower = userobj.id
++
++    if not data_dict.get('id'):
++        errors = {"id": [_("Not provided and search_string not found")]}
++        raise ValidationError(errors)
++
++    id = data_dict['id']
++
++    obj = session.query(model.SavedSearch).get(id)
++
++    if obj.user_id != follower:
++        raise NotFound(_('You are not following this search'))
++
++    obj.delete()
++
++    model.repo.commit()
++
+ 
+ def _group_or_org_member_delete(context, data_dict=None):
+     model = context['model']
+diff --git a/ckan/logic/action/get.py b/ckan/logic/action/get.py
+index b8a3bf57a..003a885b7 100644
+--- a/ckan/logic/action/get.py
++++ b/ckan/logic/action/get.py
+@@ -2556,6 +2556,30 @@ def user_activity_list(context, data_dict):
+     return model_dictize.activity_list_dictize(activity_objects, context)
+ 
+ 
++def user_saved_search_list(context, data_dict):
++    '''Return a user's saved searches.
++
++    You must be authorized to view the user's profile.
++
++
++    :param id: the id or name of the user
++    :type id: string
++
++    :rtype: list of dictionaries
++
++    '''
++    _check_access('user_show', context, data_dict)
++
++    model = context['model']
++
++    user_ref = data_dict.get('id')  # May be user name or id.
++    user = model.User.get(user_ref)
++    if user is None:
++        raise logic.NotFound
++
++    _current_search_list = model.saved_search.user_saved_searches_list(user.id)
++    return model_dictize.saved_search_list_dictize(_current_search_list, context)
++
+ @logic.validate(logic.schema.default_activity_list_schema)
+ def package_activity_list(context, data_dict):
+     '''Return a package's activity stream.
+diff --git a/ckan/logic/action/update.py b/ckan/logic/action/update.py
+index 879aabaf7..17bc7f16b 100644
+--- a/ckan/logic/action/update.py
++++ b/ckan/logic/action/update.py
+@@ -1038,7 +1038,7 @@ def send_email_notifications(context, data_dict):
+         raise ValidationError('ckan.activity_streams_email_notifications'
+                               ' is not enabled in config')
+ 
+-    return email_notifications.get_and_send_notifications_for_all_users()
++    email_notifications.get_and_send_notifications_for_all_users()
+ 
+ def package_owner_org_update(context, data_dict):
+     '''Update the owning organization of a dataset
+diff --git a/ckan/model/saved_search.py b/ckan/model/saved_search.py
+index 8ca251d87..5a4b18522 100644
+--- a/ckan/model/saved_search.py
++++ b/ckan/model/saved_search.py
+@@ -45,6 +45,14 @@ saved_search_table = Table(
+ 
+ meta.mapper(SavedSearch, saved_search_table)
+ 
++def _make_parameters(query_string):
++    parts = query_string.split("&")
++    res = {}
++    for part in parts:
++        s = part.split("=")
++        if len(s) > 1:
++            res[s[0]] = s[1]
++    return res
+ 
+ def user_saved_searches_list(user_id):
+     '''Return an SQLAlchemy query for all saved searches from user_id.'''
+@@ -53,3 +61,20 @@ def user_saved_searches_list(user_id):
+     q = q.filter(model.SavedSearch.user_id == user_id)
+ 
+     return q
++
++def saved_search_is_duplicate(user_id, search_string):
++    '''Test whether an equivalent search already exists'''
++    saved_searches = user_saved_searches_list(user_id)
++    
++    # We've already been careful to put all relevant info about the base url into
++    # saved parameters for the call that saves the search, so we can safely only
++    # compare the arguments (and not whether we searching org/grop etc. according
++    # to base URL
++    n_s_search = _make_parameters(search_string)
++    
++    for d_s_search in saved_searches:
++        #ts += "\n" + str(n_s_search) + " : " + str(d_s_search
++        if _make_parameters(d_s_search.search_string) == n_s_search:
++            return True
++
++    return False
+diff --git a/ckan/public/base/css/main.css b/ckan/public/base/css/main.css
+index d0afdde25..8db9770b6 100644
+--- a/ckan/public/base/css/main.css
++++ b/ckan/public/base/css/main.css
+@@ -3041,6 +3041,9 @@ a.btn.disabled,
+ fieldset[disabled] a.btn {
+   pointer-events: none;
+ }
++a.btn.show-title-when-disabled {
++  pointer-events: auto;
++}
+ .btn-default {
+   color: #333;
+   background-color: #fff;
+diff --git a/ckan/public/base/javascript/modules/follow.js b/ckan/public/base/javascript/modules/follow.js
+index 51227816b..1905c4a1a 100644
+--- a/ckan/public/base/javascript/modules/follow.js
++++ b/ckan/public/base/javascript/modules/follow.js
+@@ -38,7 +38,6 @@ this.ckan.module('follow', function($) {
+ 		 */
+ 		_onClick: function(event) {
+ 			var options = this.options;
+-                        console.log(options);
+ 			if (
+ 				options.action
+ 				&& options.type
+@@ -50,7 +49,7 @@ this.ckan.module('follow', function($) {
+ 				var path = options.action + '_' + options.type;
+ 				options.loading = true;
+ 				this.el.addClass('disabled');
+-				client.call('POST', path, { id : options.id }, this._onClickLoaded);
++				client.call('POST', path, { id : options.id }, this._onClickLoaded, this._onClickFailed);
+ 			}
+ 		},
+ 
+@@ -66,14 +65,44 @@ this.ckan.module('follow', function($) {
+ 			var oldAction = options.action;
+ 			options.loading = false;
+ 			this.el.removeClass('disabled');
+-			if (options.action == 'follow') {
+-				options.action = 'unfollow';
++                        /* We don't try to detect whether searches are already followed; maintain this UX here */
++                        if (options.type != 'search') { 
++			  if (options.action == 'follow') {
++			      	options.action = 'unfollow';
+ 				this.el.html('<i class="fa fa-times-circle"></i> ' + this._('Unfollow')).removeClass('btn-success').addClass('btn-danger');
+-			} else {
++			  } else {
+ 				options.action = 'follow';
+ 				this.el.html('<i class="fa fa-plus-circle"></i> ' + this._('Follow')).removeClass('btn-danger').addClass('btn-success');
+-			}
++			  }
++                        }
++                        else {
++                          if (options.action == 'follow') {
++                                $('.flash-messages').append('<div class=\"alert fade in alert-info\">' + this._('Saved search') + ' <a class=\"close\" href=\"#\">&#215;</a></div>');
++                          } else {
++                                $('#' + options.id).remove();
++                          }
++                        }
+ 			sandbox.publish('follow-' + oldAction + '-' + options.id);
+-		}
++		},
++
++                /* Fired if the call to the API failed
++                 *
++                 * json - The return json from the follow / unfollow API call
++                 *
++                 * Returns nothing.
++                 */
++                _onClickFailed: function(json) {
++                        var options = this.options;
++                        var sandbox = this.sandbox;
++                        var oldAction = options.action;
++                        options.loading = false;
++                        this.el.removeClass('disabled');
++                        if (options.type == 'search' && (json.responseJSON.error.search_string || json.responseJSON.error.follower)) {
++                          errorText = (json.responseJSON.error.search_string || json.responseJSON.error.follower)[0];
++                        }
++                        else errorText = json.statusText;
++                        $('.flash-messages').append('<div class=\"alert fade in alert-error\">' + this._('Follow') + ' ' + this._(options.type) + ' ' + this._('failed') + ': ' + errorText + '<a class=\"close\" href=\"#\">&#215;</a></div>');
++                        sandbox.publish('follow-' + oldAction + '-' + options.id);
++                }
+ 	};
+ });
+diff --git a/ckan/public/base/less/activity.less b/ckan/public/base/less/activity.less
+index f36ee41af..af7d66805 100644
+--- a/ckan/public/base/less/activity.less
++++ b/ckan/public/base/less/activity.less
+@@ -177,4 +177,4 @@
+     &.follow-group .icon {
+         background-color: spin(@activityColorNew, -50);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/ckan/public/base/vendor/bootstrap/less/buttons.less b/ckan/public/base/vendor/bootstrap/less/buttons.less
+index 9cbb8f416..215f567b9 100644
+--- a/ckan/public/base/vendor/bootstrap/less/buttons.less
++++ b/ckan/public/base/vendor/bootstrap/less/buttons.less
+@@ -57,6 +57,12 @@
+       pointer-events: none; // Future-proof disabling of clicks on `<a>` elements
+     }
+   }
++
++  a& {
++    &.show-title-when-disabled {
++      pointer-events: auto; // Allow for special cases
++    }
++  }
+ }
+ 
+ 
+diff --git a/ckan/templates/activity_streams/activity_stream_email_notifications.text b/ckan/templates/activity_streams/activity_stream_email_notifications.text
+index 1c5521861..5e24e7f27 100644
+--- a/ckan/templates/activity_streams/activity_stream_email_notifications.text
++++ b/ckan/templates/activity_streams/activity_stream_email_notifications.text
+@@ -1,4 +1,5 @@
+ {% set num = activities|length %}{{ ungettext("You have {num} new activity on your {site_title} dashboard", "You have {num} new activities on your {site_title} dashboard", num).format(site_title=g.site_title, num=num) }} {{ _('To view your dashboard, click on this link:') }}
++
+ {{ g.site_url + '/dashboard' }}
+ 
+ {{ _('Here is a summary of changes in datasets, organizations and groups:') }}
+diff --git a/ckan/templates/activity_streams/saved_searches_email_notifications.text b/ckan/templates/activity_streams/saved_searches_email_notifications.text
+index 27f62d0ea..015b1d58c 100644
+--- a/ckan/templates/activity_streams/saved_searches_email_notifications.text
++++ b/ckan/templates/activity_streams/saved_searches_email_notifications.text
+@@ -1,4 +1,4 @@
+-{% set num = activities|length %}{{num}} of your saved searches have new or different content at {{g.site_title}}
++{{ _('{num} of your saved searches have new or different content at {site_title}').format(site_title=g.site_title, num=(activities | count)) }}
+ 
+ {{ _('The following search results have changed:') }}
+ {% for activity in activities %}
+diff --git a/ckan/templates/snippets/follow_button.html b/ckan/templates/snippets/follow_button.html
+index fd5cb7ba7..de492b39b 100644
+--- a/ckan/templates/snippets/follow_button.html
++++ b/ckan/templates/snippets/follow_button.html
+@@ -12,8 +12,13 @@
+     <i class="fa fa-times-circle"></i>
+     {{ _('Unfollow') }}
+   </a>
++{% elif disabled %}
++  <a class="show-title-when-disabled disabled btn btn-success" title="{{ title }}">
++    <i class="fa fa-plus-circle"></i>
++    {{ _('Follow') }}
++  </a>
+ {% else %}
+-  <a href="{{ h.url_for(controller=controller, action='follow' + action_suffix, id=obj_id) }}" class="{% block unfollowing_class %}btn btn-success{% endblock %}" data-module="follow" data-module-type="{{ obj_type }}" data-module-id="{{ obj_id }}" data-module-action="follow">
++  <a href="{{ h.url_for(controller=controller, action='follow' + action_suffix, id=obj_id) }}" class="{% block unfollowing_class %}btn btn-success{% endblock %}" title="{{ title }}" data-module="follow" data-module-type="{{ obj_type }}" data-module-id="{{ obj_id }}" data-module-action="follow">
+     <i class="fa fa-plus-circle"></i>
+     {{ _('Follow') }}
+   </a>
+diff --git a/ckan/templates/snippets/search_form.html b/ckan/templates/snippets/search_form.html
+index 12c016725..e3df44a8d 100644
+--- a/ckan/templates/snippets/search_form.html
++++ b/ckan/templates/snippets/search_form.html
+@@ -42,9 +42,13 @@
+   {% endblock %}
+ 
+ 
+-  {% if c.search_url_params != "" %}
++  {% if h.follow_searches_available() and c.search_url_params != "" and not (c.search_url_params.count('&') == 0 and c.search_url_params[0] == "_") %}
+   <div class="follow_button control-order-by">
+-    {{ h.follow_button('search', c.search_url_params + "&_search_organization=" + organization + "&_search_group=" + group + "&_search_package_type=" + package_type) }}
++    {% if count <= 500 %}
++        {{ h.follow_button('search', c.search_url_params + "&_search_organization=" + organization + "&_search_group=" + group + "&_search_package_type=" + package_type) }}
++    {% else %}
++        {{ h.follow_button('disabled', False, reason=_("Following searches with more than 500 results is not supported")) }}
++    {% endif %}
+   </div>
+   {% endif %}
+ 
+diff --git a/ckan/templates/user/read_base.html b/ckan/templates/user/read_base.html
+index 3b88b3901..7661cc228 100644
+--- a/ckan/templates/user/read_base.html
++++ b/ckan/templates/user/read_base.html
+@@ -18,6 +18,9 @@
+ {% block content_primary_nav %}
+   {{ h.build_nav_icon('user_datasets', _('Datasets'), id=user.name) }}
+   {{ h.build_nav_icon('user_activity_stream', _('Activity Stream'), id=user.name) }}
++  {% if h.follow_searches_available() %}
++    {{ h.build_nav_icon('user_saved_search', _('Saved Searches'), id=user.name) }}
++  {% endif %}
+ {% endblock %}
+ 
+ {% block secondary_content %}
+diff --git a/ckan/templates/user/saved_search.html b/ckan/templates/user/saved_search.html
+new file mode 100644
+index 000000000..cea254786
+--- /dev/null
++++ b/ckan/templates/user/saved_search.html
+@@ -0,0 +1,26 @@
++{% extends "user/read.html" %}
++
++{% block subtitle %}{{ _('Saved Searches') }} - {{ super() }}{% endblock %}
++
++{% block primary_content_inner %}
++  <h2 class="hide-heading">{% block page_heading %}{{ _('Saved Searches') }}{% endblock %}</h2>
++  <ul class="activity">
++  {% for search in c.searches %}
++    <li class="item new-package" id="{{ search.id }}">
++      <i class="fa icon fa-search"></i>
++      <div class="actor">
++      <a class="btn btn-danger btn-sm gravatar" data-module="follow" data-module-type="search" data-module-id="{{ search.id }}" data-module-action="unfollow">&nbsp;<i class="fa fa-trash"></i></a>
++      </div>
++      <p>&nbsp;
++      <a href="{{ search.search_url_in_ckan }}">{{ search.search_url_in_ckan | truncate(75) }}</a>
++        <span class="date">
++          {% if search.last_run %}
++            {{ search.last_results | count }} {{ _('result(s)') }}
++          {% else %}
++            {{ _('Not yet run') }}
++          {% endif %}
++        </span>
++      </p>
++    </li>
++  {% endfor %}
++{% endblock %}
+-- 
+2.21.1 (Apple Git-122.3)
+
