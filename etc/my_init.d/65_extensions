@@ -1,31 +1,47 @@
 #!/bin/sh
 set -eu
 
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.plugins = nrgi scheming_datasets stats text_view image_view datatables_view recline_graph_view recline_map_view recline_view webpage_view datastore datapusher dietstars spatial_metadata spatial_query officedocs_view dcat structured_data dcat_json_interface pages pdf_view geo_view geojson_view wmts_view resource_proxy s3filestore googleanalytics sqlalchemythread"
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e \
+                      "ckan.plugins = nrgi scheming_datasets stats text_view image_view datatables_view recline_graph_view recline_map_view recline_view webpage_view datastore datapusher dietstars spatial_metadata spatial_query officedocs_view dcat structured_data dcat_json_interface pages pdf_view geo_view geojson_view wmts_view resource_proxy s3filestore googleanalytics sqlalchemythread" \
+                      "ckan.views.default_views = geojson_view image_view text_view datatables_view pdf_view officedocs_view geo_view wmts_view"
 
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.spatial.search_backend = solr"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e "ckan.views.default_views = geojson_view image_view text_view datatables_view pdf_view officedocs_view geo_view wmts_view"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckan.datapusher.formats = csv tsv application/csv"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.pages.allow_html = True"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.pages.alternative_name = analysis"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -v "ckanext.geoview.ol_viewer.formats = wms wfs gml kml arcgis_rest"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_secret_access_key= $AWS_SECRET_ACCESS_KEY"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_bucket_name = $AWS_BUCKET_NAME"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.aws_storage_path = $AWS_STORAGE_PATH"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.region_name = $AWS_REGION_NAME" #e.g. eu-central-1
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.signature_version = $AWS_SIGNATURE_VERSION" #s3 or s3v4
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.host_name = $AWS_HOST_NAME" #Seems to not be in use (yet?)
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckanext.s3filestore.filesystem_download_fallback = false"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.extra_resource_fields = answers questions assessments"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.activity_streams_email_notifications = True"
+
+$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
+                      "ckanext.spatial.search_backend = solr" \
+                      "ckan.site_title = ResourceData"
+                      "ckan.datapusher.formats = csv tsv application/csv" \
+                      "ckanext.pages.allow_html = True" \
+                      "ckanext.pages.alternative_name = analysis" \
+                      "ckanext.geoview.ol_viewer.formats = wms wfs gml kml arcgis_rest" \
+                      "ckan.extra_resource_fields = answers questions assessments" \
+                      "ckan.activity_streams_email_notifications = True" \
+                      "ckan.email_notifications_since = 8 days" \
+                      "scheming.dataset_schemas = ckanext.nrgi:schema.json ckanext.nrgi:schema_datasets.json ckanext.nrgi:schema_records.json" \
+                      "ckan.search.show_all_types = record" \
+                      "ckan.resource_proxy.max_file_size = 7340032" \
+                      "search.facets.limit = 500" \
+                      "ckan.follow_searches_enabled = true" \
+                      "ckan.follow_searches_max_number = 30"
+
 #Basically a way to tell CKAN to send alerts back as far as when it last sent alerts, assuming the alert-sending is triggered e.g. every 7 days
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.email_notifications_since = 8 days"
 #"Record" is our catch-all type. See https://github.com/ckan/ckan/pull/3807
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "scheming.dataset_schemas = ckanext.nrgi:schema.json ckanext.nrgi:schema_datasets.json ckanext.nrgi:schema_records.json"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.search.show_all_types = record"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.resource_proxy.max_file_size = 7340032"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "search.facets.limit = 500"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.follow_searches_enabled = true"
-$CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "ckan.follow_searches_max_number = 30"
+if [ ! -z "$GA_CODE" ]; then
+    $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
+fi;
+
+if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
+    $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
+                          "ckanext.s3filestore.check_access_on_startup = false" \
+                          "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID" \
+                          "ckanext.s3filestore.aws_secret_access_key= $AWS_SECRET_ACCESS_KEY" \
+                          "ckanext.s3filestore.aws_bucket_name = $AWS_BUCKET_NAME" \
+                          "ckanext.s3filestore.aws_storage_path = $AWS_STORAGE_PATH" \
+                          "ckanext.s3filestore.region_name = $AWS_REGION_NAME" \
+                          "ckanext.s3filestore.signature_version = $AWS_SIGNATURE_VERSION" \
+                          "ckanext.s3filestore.host_name = $AWS_HOST_NAME" \
+                          "ckanext.s3filestore.filesystem_download_fallback = false"
+fi;
+
+ #AWS_REGION_NAME Region: e.g. eu-central-1
+ #AWS_SIGNATURE_VERSION s3 or s3v4
+ #AWS_HOST_NAME: Seems to not be in use (yet?)
