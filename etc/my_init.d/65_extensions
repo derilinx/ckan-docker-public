@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+_GA=${GA_CODE:-}
+_AWS=${AWS_ACCESS_KEY:-}
+
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e \
                       "ckan.plugins = nrgi scheming_datasets stats text_view image_view datatables_view recline_graph_view recline_map_view recline_view webpage_view datastore datapusher dietstars spatial_metadata spatial_query officedocs_view dcat structured_data dcat_json_interface pages pdf_view geo_view geojson_view wmts_view resource_proxy s3filestore googleanalytics sqlalchemythread" \
                       "ckan.views.default_views = geojson_view image_view text_view datatables_view pdf_view officedocs_view geo_view wmts_view"
@@ -8,7 +11,7 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini -e \
 
 $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
                       "ckanext.spatial.search_backend = solr" \
-                      "ckan.site_title = ResourceData"
+                      "ckan.site_title = ResourceData" \
                       "ckan.datapusher.formats = csv tsv application/csv" \
                       "ckanext.pages.allow_html = True" \
                       "ckanext.pages.alternative_name = analysis" \
@@ -25,11 +28,12 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
 
 #Basically a way to tell CKAN to send alerts back as far as when it last sent alerts, assuming the alert-sending is triggered e.g. every 7 days
 #"Record" is our catch-all type. See https://github.com/ckan/ckan/pull/3807
-if [ ! -z "$GA_CODE" ]; then
+
+if [ ! -z "$_GA" ]; then
     $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini "googleanalytics.id = $GA_CODE"
 fi;
 
-if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
+if [ ! -z "$_AWS" ]; then
     $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
                           "ckanext.s3filestore.check_access_on_startup = false" \
                           "ckanext.s3filestore.aws_access_key_id = $AWS_ACCESS_KEY_ID" \
