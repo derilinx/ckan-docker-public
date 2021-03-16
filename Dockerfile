@@ -126,5 +126,3 @@ CMD ["/sbin/my_init"]
 #VOLUME ["/etc/ckan/default"]
 #VOLUME ["/var/lib/ckan"]
 EXPOSE 80
-
-RUN rm -r /tmp/* /var/tmp/*
