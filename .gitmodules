@@ -7,3 +7,6 @@
 [submodule "ckan-upstream"]
 	path = ckan-upstream
 	url = https://github.com/ckan/ckan.git
+[submodule "extensions/ckanext-googleanalytics"]
+	path = extensions/ckanext-googleanalytics
+	url = https://github.com/ckan/ckanext-googleanalytics
