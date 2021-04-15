@@ -24,7 +24,8 @@ $CKAN_HOME/bin/paster --plugin=ckan config-tool /etc/ckan/default/ckan.ini \
                       "ckan.resource_proxy.max_file_size = 7340032" \
                       "search.facets.limit = 500" \
                       "ckan.follow_searches_enabled = true" \
-                      "ckan.follow_searches_max_number = 30"
+                      "ckan.follow_searches_max_number = 30" \
+		      "ckan.max_resource_size = 50"
 
 #Basically a way to tell CKAN to send alerts back as far as when it last sent alerts, assuming the alert-sending is triggered e.g. every 7 days
 #"Record" is our catch-all type. See https://github.com/ckan/ckan/pull/3807
